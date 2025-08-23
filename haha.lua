@@ -2,6 +2,17 @@ local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local taskEvent = replicatedStorage:WaitForChild("Events"):WaitForChild("Restaurant"):WaitForChild("TaskCompleted")
 local playerGui = player:WaitForChild("PlayerGui")
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+
+Players.LocalPlayer.Idled:Connect(function()
+    -- This prevents Roblox from auto-kicking your own players for idling
+    -- Useful if you want to manage AFK behavior yourself
+    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
 
 local Settings = {
     AutoCustomer = true,
