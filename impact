@@ -24,16 +24,16 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
         KeySettings = {
             Title = "Lynx",
             Subtitle = "Key System",
-            Note = "password:lynx",
+            Note = "password:Lynx",
             FileName = "impact",
             SaveKey = true,
             GrabKeyFromSite = false,
-            Key = {"lynx"}
+            Key = {"Lynx"}
         }
     })
 
 Rayfield:Notify({
-        Title = "Elle Script Loaded",
+        Title = "Script Loaded",
         Content = "Thanks for using Elle Cheats - Fruit Battlegrounds",
         Duration = 5,
         Image = nil,
