@@ -19,6 +19,16 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
             Enabled = true,
             Invite = "https://discord.gg/XQYCxTBqCm",
             RememberJoins = true
+        },
+        KeySystem = true,
+        KeySettings = {
+            Title = "Lynx",
+            Subtitle = "Key System",
+            Note = "password:lynx",
+            FileName = "impact",
+            SaveKey = true,
+            GrabKeyFromSite = false,
+            Key = {"lynx"}
         }
     })
 
