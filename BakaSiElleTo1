@@ -39,13 +39,19 @@ AddContent("Toogle", "Sempre Dia", [[
     game.Lighting.ClockTime = 20
 ]])
 
--- Botão: +100 Money
 AddContent("TextButton", "+999999999 Money", [[
     local player = game:GetService("Players").LocalPlayer
-    local data = player.Data.Files[tostring(player.CurrentFile.Value)]
-    data.Cash.Value = data.Cash.Value + (999999999 * 1) -- multiplica o valor normal por 100
+    local currentFile = tostring(player.CurrentFile.Value)
+    local fileData = player:FindFirstChild("Data") and player.Data.Files:FindFirstChild(currentFile)
+
+    if fileData and fileData:FindFirstChild("Cash") then
+        fileData.Cash.Value = fileData.Cash.Value + 999999999
+    else
+        warn("❌ Cash value not found — try clicking a dropper or collecting once before using this.")
+    end
 ]])
 
 -- Texto fixo embaixo
 local TextLabel = AddContent("TextLabel")
 TextLabel.Text = "ELLE"
+
