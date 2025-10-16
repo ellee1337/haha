@@ -13,10 +13,10 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
         ConfigurationSaving = {
             Enabled = true,
             FolderName = nil,
-            FileName = "impact"
+            FileName = "impact2"
         },
         Discord = {
-            Enabled = false,
+            Enabled = true,
             Invite = "https://discord.gg/XQYCxTBqCm",
             RememberJoins = true
         },
@@ -25,7 +25,7 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
             Title = "Lynx",
             Subtitle = "Key System",
             Note = "lynx",
-            FileName = "impact",
+            FileName = "impact2",
             SaveKey = true,
             GrabKeyFromSite = false,
             Key = {"LYNX"}
