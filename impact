@@ -1,7 +1,7 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
     
     local Window = Rayfield:CreateWindow({
-        Name = "Lynx | Fruit Battlegrounds",
+        Name = "Fruit Battlegrounds",
         Icon = 0,
         LoadingTitle = "Lynx",
         LoadingSubtitle = "by Elle",
@@ -16,7 +16,7 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
             FileName = "impact"
         },
         Discord = {
-            Enabled = true,
+            Enabled = false,
             Invite = "https://discord.gg/XQYCxTBqCm",
             RememberJoins = true
         },
@@ -24,11 +24,11 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
         KeySettings = {
             Title = "Lynx",
             Subtitle = "Key System",
-            Note = "password:Lynx",
+            Note = "lynx",
             FileName = "impact",
             SaveKey = true,
             GrabKeyFromSite = false,
-            Key = {"Lynx"}
+            Key = {"lynx"}
         }
     })
 
