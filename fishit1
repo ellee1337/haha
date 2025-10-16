@@ -23,7 +23,7 @@ local Window = Rayfield:CreateWindow({
         Invite = "noinvitelink",
         RememberJoins = true
     },
-    KeySystem = false,
+    KeySystem = true,
         KeySettings = {
             Title = "Lynx",
             Subtitle = "Key System",
@@ -298,3 +298,4 @@ Rayfield:Notify({
 })
 
 print("SilentHub loaded successfully!")
+
