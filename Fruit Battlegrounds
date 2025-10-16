@@ -1,7 +1,7 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
     
     local Window = Rayfield:CreateWindow({
-        Name = "TheIceCrew | Fruit Battlegrounds",
+        Name = "Lynx | Fruit Battlegrounds",
         Icon = 0,
         LoadingTitle = "Lynx",
         LoadingSubtitle = "by Elle",
@@ -22,6 +22,13 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
         },
         KeySystem = false,
         KeySettings = {
+            Title = "IceHubKeySystem",
+            Subtitle = "Key System",
+            Note = "https://loot-link.com/s?2kHdmfCz",
+            FileName = "IceHubKey",
+            SaveKey = true,
+            GrabKeyFromSite = true,
+            Key = {"https://pastebin.com/raw/hnLvPxsd"}
         }
     })
 
