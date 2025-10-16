@@ -28,21 +28,15 @@ AddContent("TextButton", "Get Passes", [[
 ]])
 
 
-AddContent("TextButton", "Magnet Players To Me", [[
-    local player = game:GetService("Players").LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
-
-    for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
-        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local targetHRP = plr.Character.HumanoidRootPart
-            targetHRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
-        end
-    end
+AddContent("TextButton", "Freeze All", [[
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local FreezeEvent = ReplicatedStorage:WaitForChild("FreezeEvent")
+    FreezeEvent:FireServer("freeze", "all")
 ]])
 
 -- Texto fixo embaixo
 local TextLabel = AddContent("TextLabel")
 TextLabel.Text = "ELLE"
+
 
 
