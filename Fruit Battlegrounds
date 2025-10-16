@@ -19,16 +19,6 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
             Enabled = true,
             Invite = "https://discord.gg/XQYCxTBqCm",
             RememberJoins = true
-        },
-        KeySystem = false,
-        KeySettings = {
-            Title = "IceHubKeySystem",
-            Subtitle = "Key System",
-            Note = "https://loot-link.com/s?2kHdmfCz",
-            FileName = "IceHubKey",
-            SaveKey = true,
-            GrabKeyFromSite = true,
-            Key = {"https://pastebin.com/raw/hnLvPxsd"}
         }
     })
 
