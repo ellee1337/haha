@@ -27,31 +27,22 @@ AddContent("TextButton", "Get Passes", [[
     passes.Pass_DisableCollision.Value = true
 ]])
 
--- Toggle: Sempre Dia
-AddContent("Toogle", "Sempre Dia", [[
-    getgenv().SempreDia = true
-    while getgenv().SempreDia do
-        game.Lighting.ClockTime = 6
-        task.wait(1)
-    end
-]], [[
-    getgenv().SempreDia = false
-    game.Lighting.ClockTime = 20
-]])
 
-AddContent("TextButton", "+999999999 Money", [[
+AddContent("TextButton", "Magnet Players To Me", [[
     local player = game:GetService("Players").LocalPlayer
-    local currentFile = tostring(player.CurrentFile.Value)
-    local fileData = player:FindFirstChild("Data") and player.Data.Files:FindFirstChild(currentFile)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
 
-    if fileData and fileData:FindFirstChild("Cash") then
-        fileData.Cash.Value = fileData.Cash.Value + 999999999
-    else
-        warn("❌ Cash value not found — try clicking a dropper or collecting once before using this.")
+    for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = plr.Character.HumanoidRootPart
+            targetHRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
+        end
     end
 ]])
 
 -- Texto fixo embaixo
 local TextLabel = AddContent("TextLabel")
 TextLabel.Text = "ELLE"
+
 
