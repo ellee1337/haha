@@ -39,19 +39,11 @@ AddContent("Toogle", "Sempre Dia", [[
     game.Lighting.ClockTime = 20
 ]])
 
--- Toggle: Auto Click (Money)
-AddContent("Toogle", "Auto Click (Money)", [[
-    getgenv().AutoClick = true
-    while getgenv().AutoClick do
-        -- Simula o clique no botão de ganhar dinheiro
-        local args = {
-            [1] = "CollectMoney" -- muda se o evento for diferente
-        }
-        game:GetService("ReplicatedStorage").RemoteEvent:FireServer(unpack(args))
-        task.wait(0.1) -- velocidade do clique (quanto menor, mais rápido)
-    end
-]], [[
-    getgenv().AutoClick = false
+-- Botão: +100 Money
+AddContent("TextButton", "+999999999 Money", [[
+    local player = game:GetService("Players").LocalPlayer
+    local data = player.Data.Files[tostring(player.CurrentFile.Value)]
+    data.Cash.Value = data.Cash.Value + (999999999 * 1) -- multiplica o valor normal por 100
 ]])
 
 -- Texto fixo embaixo
