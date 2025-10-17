@@ -1,0 +1,265 @@
+-- ⚔️ Combat Admin Panel + Combat System by Elle
+-- ✅ Works with Solara + Rayfield UI (Fixed Visibility)
+
+----------------------------------------------------
+-- 🧩 SERVICES
+----------------------------------------------------
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+
+----------------------------------------------------
+-- ⚙️ CONFIGURATION
+----------------------------------------------------
+local CONFIG = {
+    speed = 13,
+    jumpPower = 78,
+    maxHealth = 206,
+    respawnTime = 7,
+    debugMode = false
+}
+
+----------------------------------------------------
+-- 📡 REMOTES
+----------------------------------------------------
+local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+if not remotes then
+    remotes = Instance.new("Folder", ReplicatedStorage)
+    remotes.Name = "Remotes"
+end
+
+local damageEvent = remotes:FindFirstChild("DamageEvent") or Instance.new("RemoteEvent", remotes)
+damageEvent.Name = "DamageEvent"
+
+local healEvent = remotes:FindFirstChild("HealEvent") or Instance.new("RemoteEvent", remotes)
+healEvent.Name = "HealEvent"
+
+local respawnEvent = remotes:FindFirstChild("RespawnEvent") or Instance.new("RemoteEvent", remotes)
+respawnEvent.Name = "RespawnEvent"
+
+----------------------------------------------------
+-- 🗡️ WEAPONS
+----------------------------------------------------
+local weapons = {
+    { name = "Sword", damage = 15, cooldown = 0.8, range = 4 },
+    { name = "Bow", damage = 10, cooldown = 1.2, range = 30 },
+    { name = "Staff", damage = 25, cooldown = 2.5, range = 15 }
+}
+
+----------------------------------------------------
+-- 🧮 DAMAGE CALCULATION
+----------------------------------------------------
+local function calculateDamage(baseDamage, distance)
+    local modifier = 1
+    if distance > 10 then
+        modifier = modifier * (1 - (distance - 10) * 0.02)
+    end
+    modifier = modifier * (math.random() * 0.2 + 0.9)
+    return math.floor(baseDamage * modifier)
+end
+
+----------------------------------------------------
+-- 🧍 PLAYER HANDLING
+----------------------------------------------------
+local function setupPlayer(player)
+    player.CharacterAdded:Connect(function(character)
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.WalkSpeed = CONFIG.speed
+        humanoid.JumpPower = CONFIG.jumpPower
+        humanoid.MaxHealth = CONFIG.maxHealth
+        humanoid.Health = CONFIG.maxHealth
+    end)
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    setupPlayer(p)
+end
+Players.PlayerAdded:Connect(setupPlayer)
+
+----------------------------------------------------
+-- ⚔️ DAMAGE EVENT HANDLER
+----------------------------------------------------
+damageEvent.OnServerEvent:Connect(function(playerWhoFired, targetPlayer, damageAmount, weaponIndex)
+    if not playerWhoFired or not targetPlayer or not targetPlayer.Character then return end
+    local weapon = weapons[weaponIndex or 1]
+    if not weapon then return end
+
+    local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+    if targetHumanoid then
+        local distance = (playerWhoFired.Character.PrimaryPart.Position - targetPlayer.Character.PrimaryPart.Position).Magnitude
+        if distance <= weapon.range then
+            local finalDamage = calculateDamage(damageAmount or weapon.damage, distance)
+            targetHumanoid.Health = math.max(0, targetHumanoid.Health - finalDamage)
+
+            if CONFIG.debugMode then
+                warn(("[Debug] %s dealt %d damage to %s"):format(playerWhoFired.Name, finalDamage, targetPlayer.Name))
+            end
+        end
+    end
+end)
+
+----------------------------------------------------
+-- 🔁 RESPAWN LOOP
+----------------------------------------------------
+RunService.Heartbeat:Connect(function()
+    for _, player in ipairs(Players:GetPlayers()) do
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum.Health <= 0 and not char:FindFirstChild("Respawning") then
+                local respawning = Instance.new("BoolValue", char)
+                respawning.Name = "Respawning"
+                task.delay(CONFIG.respawnTime, function()
+                    respawnEvent:FireClient(player)
+                    respawning:Destroy()
+                    if CONFIG.debugMode then
+                        print("[Debug] Respawned:", player.Name)
+                    end
+                end)
+            end
+        end
+    end
+end)
+
+----------------------------------------------------
+-- 🪄 RAYFIELD UI SETUP (FIXED)
+----------------------------------------------------
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+end)
+
+if not success or not Rayfield then
+    warn("[⚠️] Rayfield failed to load — check your executor’s HTTP access.")
+    return
+end
+
+-- Force GUI visibility
+task.wait(1)
+for _, gui in ipairs(CoreGui:GetChildren()) do
+    if gui.Name == "Rayfield" then
+        gui.Enabled = true
+        gui.ResetOnSpawn = false
+    end
+end
+
+----------------------------------------------------
+-- 🪄 CREATE WINDOW
+----------------------------------------------------
+local Window = Rayfield:CreateWindow({
+    Name = "⚔️ Combat Admin Panel",
+    LoadingTitle = "Loading Combat System...",
+    LoadingSubtitle = "by Elle",
+    KeySystem = false
+})
+
+----------------------------------------------------
+-- ⚙️ PLAYER CONFIG TAB
+----------------------------------------------------
+local PlayerTab = Window:CreateTab("⚙️ Player Config")
+
+PlayerTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {10, 100},
+    Increment = 1,
+    CurrentValue = CONFIG.speed,
+    Callback = function(Value)
+        CONFIG.speed = Value
+        local lp = Players.LocalPlayer
+        if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
+            lp.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "Jump Power",
+    Range = {50, 150},
+    Increment = 1,
+    CurrentValue = CONFIG.jumpPower,
+    Callback = function(Value)
+        CONFIG.jumpPower = Value
+        local lp = Players.LocalPlayer
+        if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
+            lp.Character:FindFirstChildOfClass("Humanoid").JumpPower = Value
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "Max Health",
+    Range = {100, 500},
+    Increment = 5,
+    CurrentValue = CONFIG.maxHealth,
+    Callback = function(Value)
+        CONFIG.maxHealth = Value
+        local lp = Players.LocalPlayer
+        if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
+            local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+            hum.MaxHealth = Value
+            hum.Health = Value
+        end
+    end,
+})
+
+----------------------------------------------------
+-- 🗡️ COMBAT TAB
+----------------------------------------------------
+local CombatTab = Window:CreateTab("🗡️ Combat Tools")
+
+CombatTab:CreateButton({
+    Name = "Test Sword Hit (Self-Damage)",
+    Callback = function()
+        local lp = Players.LocalPlayer
+        if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
+            local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+            hum.Health -= 10
+            Rayfield:Notify({
+                Title = "Combat Test",
+                Content = "🗡️ You hit yourself for 10 damage.",
+                Duration = 3
+            })
+        end
+    end,
+})
+
+CombatTab:CreateButton({
+    Name = "Heal Player (+20 HP)",
+    Callback = function()
+        local lp = Players.LocalPlayer
+        if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
+            local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+            hum.Health = math.min(CONFIG.maxHealth, hum.Health + 20)
+            Rayfield:Notify({
+                Title = "Heal",
+                Content = "💚 Restored 20 HP",
+                Duration = 2
+            })
+        end
+    end,
+})
+
+----------------------------------------------------
+-- 🧠 DEBUG TAB
+----------------------------------------------------
+local DebugTab = Window:CreateTab("🐞 Debug")
+
+DebugTab:CreateToggle({
+    Name = "Enable Debug Mode",
+    CurrentValue = CONFIG.debugMode,
+    Callback = function(Value)
+        CONFIG.debugMode = Value
+        Rayfield:Notify({
+            Title = "Debug Mode",
+            Content = tostring(Value and "Enabled" or "Disabled"),
+            Duration = 2
+        })
+    end,
+})
+
+----------------------------------------------------
+-- ✅ FINALIZE
+----------------------------------------------------
+Rayfield:LoadConfiguration()
+print("✅ Combat Admin Panel loaded — Press RIGHT CTRL to toggle UI")
