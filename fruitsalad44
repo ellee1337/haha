@@ -292,16 +292,16 @@ end
 
 -- Auto loop for skilling + clicking
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait(0.1) do
         if AutoFarm.Enabled then
             useSkillKeyFarm("One")
-            task.wait(0.5)
+            task.wait(1.0)
             useSkillKeyFarm("Two")
-            task.wait(0.5)
+            task.wait(1.0)
             useSkillKeyFarm("Three")
-            task.wait(0.5)
+            task.wait(1.5)
             useSkillKeyFarm("Four")
-            task.wait(0.5)
+            task.wait(1.5)
             useSkillKeyFarm("G")
         end
     end
