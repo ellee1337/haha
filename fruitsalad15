@@ -154,22 +154,24 @@ local function updateBillboards()
 
 			if ESP.Enabled then
 				if not billboard then
-					billboard = Instance.new("BillboardGui")
-					billboard.Size = UDim2.new(0, 200, 0, 30)
-					billboard.Adornee = hrp
-					billboard.AlwaysOnTop = true
-					billboard.Parent = game.CoreGui
+   				billboard = Instance.new("BillboardGui")
+    			billboard.Size = UDim2.new(0, 150, 0, 25) -- smaller size
+    			billboard.Adornee = hrp
+    		billboard.AlwaysOnTop = true
+    		billboard.Parent = game.CoreGui
 
-					local text = Instance.new("TextLabel", billboard)
-					text.Size = UDim2.new(1, 0, 1, 0)
-					text.BackgroundTransparency = 1
-					text.TextColor3 = Color3.fromRGB(255, 255, 255)
-					text.TextStrokeTransparency = 0
-					text.TextScaled = true
-					text.Name = "NameLabel"
+    		local text = Instance.new("TextLabel", billboard)
+    		text.Size = UDim2.new(1, 0, 1, 0)
+    		text.BackgroundTransparency = 1
+    		text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    		text.TextStrokeTransparency = 0.2
+		    text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    		text.Font = Enum.Font.GothamBold
+    		text.TextScaled = true
+    		text.Name = "NameLabel"
 
-					BillboardCache[player] = billboard
-				end
+    		BillboardCache[player] = billboard
+		end
 				billboard.Enabled = true
 				billboard.NameLabel.Text = string.format("%s [%dm]", player.Name, math.floor(distance))
 			else
