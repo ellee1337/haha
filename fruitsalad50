@@ -179,19 +179,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- No Dash Cooldown
-RunService.Heartbeat:Connect(function()
-    if Movement.NoDashCooldown then
-        local char = LocalPlayer.Character
-        if char then
-            for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("NumberValue") and (v.Name:lower():find("cooldown") or v.Name:lower():find("dash")) then
-                    v.Value = 0
-                end
-            end
-        end
-    end
-end)
 
 ------------------------------------------------------------
 -- 🔄 Teleport Magnet (Behind Player + MiscTab Toggle)
@@ -331,7 +318,7 @@ end
 -- Auto loop for skilling + clicking
 task.spawn(function()
     while task.wait(0.1) do
-        if AutoFarm.Enabled then
+        if AutoPvp.Enabled then
             useSkillKeyPvp("One")
             task.wait(1.5)
             useSkillKeyPvp("Two")
@@ -552,20 +539,7 @@ MovementTab:CreateSlider({
         Movement.WalkSpeed = Value
     end,
 })
-MovementTab:CreateToggle({
-    Name = "No Dash Cooldown",
-    CurrentValue = false,
-    Flag = "NoDash_Toggle",
-    Callback = function(Value)
-        Movement.NoDashCooldown = Value
-    end,
-})
-MovementTab:CreateParagraph({
-    Title = "Fly Controls",
-    Content = "Press [E] to toggle fly.\nUse WASD to move while flying."
-})
 
--- Misc Tab
 local MiscTab = Window:CreateTab("🔧 Misc", 4483362458)
 MiscTab:CreateParagraph({
     Title = "Teleport Controls",
@@ -629,6 +603,7 @@ MiscTab:CreateButton({
         Combat.Aimlock = false
         Combat.AutoAttack = false
         AutoFarm.Enabled = false
+        AutoPvp.Enabled = false
         Movement.SpeedEnabled = false
         Movement.NoDashCooldown = false
         Invisible.Enabled = false
