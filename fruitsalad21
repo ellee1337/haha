@@ -156,7 +156,7 @@ local function updateBillboards()
 			if ESP.Enabled then
 				if not billboard then
    				billboard = Instance.new("BillboardGui")
-    			billboard.Size = UDim2.new(0, 50, 0, 15) -- smaller size
+    			billboard.Size = UDim2.new(0, 50, 0, 15)
     			billboard.Adornee = hrp
     			billboard.AlwaysOnTop = true
     			billboard.Parent = game.CoreGui
@@ -239,6 +239,9 @@ local Window = Rayfield:CreateWindow({
 	ConfigurationSaving = {Enabled = false}
 })
 
+Window:Show() -- Ensure UI appears
+
+-- Main Tab
 local Tab = Window:CreateTab("Main", 4483362458)
 
 Tab:CreateToggle({
@@ -250,4 +253,64 @@ Tab:CreateToggle({
 	end,
 })
 
-Tab:CreateParagraph({Title = "Fly Controls", Content = "Press [E] to toggle fly.\nUse WASD to move while flying.\nPress [H] to teleport to the next alive player."})
+Tab:CreateParagraph({
+	Title = "Fly Controls", 
+	Content = "Press [E] to toggle fly.\nUse WASD to move while flying.\nPress [H] to teleport to the next alive player."
+})
+
+------------------------------------------------------------
+-- Teleport Tab (Dropdown + Auto-Refresh)
+------------------------------------------------------------
+local TeleportTab = Window:CreateTab("Teleport", 4483362458)
+
+local selectedPlayer = nil
+
+local function getAlivePlayers()
+    local list = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hum = player.Character:FindFirstChildOfClass("Humanoid")
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if hum and hrp and hum.Health > 0 then
+                table.insert(list, player.Name)
+            end
+        end
+    end
+    return list
+end
+
+local playerDropdown = TeleportTab:CreateDropdown({
+    Name = "Select Player to Teleport",
+    Options = getAlivePlayers(),
+    CurrentOption = nil,
+    Flag = "Teleport_Player",
+    Callback = function(option)
+        selectedPlayer = Players:FindFirstChild(option)
+    end,
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport Now",
+    Callback = function()
+        if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local char = LocalPlayer.Character
+            local localHRP = char and char:FindFirstChild("HumanoidRootPart")
+            local targetHRP = selectedPlayer.Character.HumanoidRootPart
+            if localHRP then
+                if flying and bv and bg then
+                    bv.Velocity = Vector3.new(0,0,0)
+                end
+                localHRP.CFrame = targetHRP.CFrame + Vector3.new(0,5,0)
+            end
+        end
+    end,
+})
+
+-- Auto-refresh dropdown every 5 seconds
+task.spawn(function()
+    while true do
+        task.wait(5)
+        local alivePlayers = getAlivePlayers()
+        playerDropdown:UpdateOptions(alivePlayers)
+    end
+end)
