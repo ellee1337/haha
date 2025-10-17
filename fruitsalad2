@@ -1,0 +1,151 @@
+-- ⚔️ Combat Admin Panel by Elle
+-- ✅ Fully compatible with Solara Executor
+
+-- 🪄 Load Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+repeat task.wait() until Rayfield
+
+-- 🧩 Main Window
+local Window = Rayfield:CreateWindow({
+    Name = "⚔️ Combat Admin Panel",
+    LoadingTitle = "Loading Admin Tools...",
+    LoadingSubtitle = "by Elle",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    KeySystem = false,
+})
+
+-- ⚙️ Tabs
+local PlayerTab = Window:CreateTab("⚙️ Player Config")
+local CombatTab = Window:CreateTab("🗡️ Combat Tools")
+local DebugTab = Window:CreateTab("🐞 Debug")
+
+----------------------------------------------------
+-- 🧍 PLAYER CONFIG TAB
+----------------------------------------------------
+PlayerTab:CreateSlider({
+    Name = "WalkSpeed",
+    Range = {16, 100},
+    Increment = 1,
+    Suffix = " Speed",
+    CurrentValue = 16,
+    Flag = "WalkSpeedSlider",
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "JumpPower",
+    Range = {50, 150},
+    Increment = 1,
+    Suffix = " Jump",
+    CurrentValue = 50,
+    Flag = "JumpPowerSlider",
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            player.Character:FindFirstChildOfClass("Humanoid").JumpPower = Value
+        end
+    end,
+})
+
+PlayerTab:CreateButton({
+    Name = "Reset Character",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player and player.Character then
+            player.Character:BreakJoints()
+        end
+    end,
+})
+
+----------------------------------------------------
+-- 🗡️ COMBAT TOOLS TAB
+----------------------------------------------------
+CombatTab:CreateButton({
+    Name = "Give Sword",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player and player.Backpack then
+            local sword = Instance.new("Tool")
+            sword.Name = "Sword"
+            sword.RequiresHandle = false
+            sword.Parent = player.Backpack
+            print("🗡️ Sword given to", player.Name)
+        end
+    end,
+})
+
+CombatTab:CreateButton({
+    Name = "Kill Nearest Player",
+    Callback = function()
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local closest, distance = nil, math.huge
+
+        for _, v in ipairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                local mag = (LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                if mag < distance then
+                    closest = v
+                    distance = mag
+                end
+            end
+        end
+
+        if closest and closest.Character and closest.Character:FindFirstChildOfClass("Humanoid") then
+            closest.Character:FindFirstChildOfClass("Humanoid").Health = 0
+            Rayfield:Notify({
+                Title = "Combat",
+                Content = "💀 Killed " .. closest.Name,
+                Duration = 3,
+                Image = 4483362458
+            })
+        else
+            Rayfield:Notify({
+                Title = "Combat",
+                Content = "❌ No nearby players found.",
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
+})
+
+----------------------------------------------------
+-- 🧠 DEBUG TAB
+----------------------------------------------------
+DebugTab:CreateToggle({
+    Name = "Debug Mode",
+    CurrentValue = false,
+    Flag = "DebugToggle",
+    Callback = function(Value)
+        print("🐞 Debug mode:", Value)
+    end,
+})
+
+DebugTab:CreateButton({
+    Name = "Print Player Info",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        print("Player:", player.Name)
+        if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            print("WalkSpeed:", player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed)
+            print("JumpPower:", player.Character:FindFirstChildOfClass("Humanoid").JumpPower)
+            print("Health:", player.Character:FindFirstChildOfClass("Humanoid").Health)
+        end
+    end,
+})
+
+----------------------------------------------------
+-- ✅ Finalize UI
+----------------------------------------------------
+Rayfield:LoadConfiguration()
+
+-- 💡 Tip: Press RIGHT CTRL to toggle the UI on/off
+print("✅ Combat Admin Panel Loaded - Press Right Ctrl to toggle UI")
