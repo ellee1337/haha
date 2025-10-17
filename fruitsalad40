@@ -295,7 +295,7 @@ end
 
 -- Auto loop for skilling + clicking
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0.05) do
         if AutoFarm.Enabled then
             useSkillKeyFarm("One")
             task.wait(0.5)
@@ -310,36 +310,6 @@ task.spawn(function()
     end
 end)
 
-
-------------------------------------------------------------
--- ⚔️ Auto Skill PvP (Skill Only - 0.5s Delay)
-------------------------------------------------------------
-local AutoSkillPVP = {Enabled = false}
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
--- Function to press key only
-local function useSkillKeyPVP(key)
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
-    task.wait(0.05)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
-end
-
--- Auto loop for skill-only PvP
-task.spawn(function()
-    while task.wait(0.3) do
-        if AutoSkillPVP.Enabled then
-            useSkillKeyPVP("One")
-            task.wait(0.2)
-            useSkillKeyPVP("Two")
-            task.wait(0.2)
-            useSkillKeyPVP("Three")
-            task.wait(0.2)
-            useSkillKeyPVP("Four")
-            task.wait(0.2)
-            useSkillKeyPVP("G")
-        end
-    end
-end)
 
 ------------------------------------------------------------
 -- 👁️ ESP
@@ -473,15 +443,7 @@ CombatTab:CreateToggle({
     end,
 })
 CombatTab:CreateToggle({
-    Name = "Auto Skill PvP (Skills + Attack for players)",
-    CurrentValue = false,
-    Flag = "AutoSkillPVP",
-    Callback = function(Value)
-        AutoSkillPVP.Enabled = Value
-    end,
-})
-CombatTab:CreateToggle({
-    Name = "Auto Farm Level (Skills + Attack for farming)",
+    Name = "Auto Farm Level (Skills + Attack)",
     CurrentValue = false,
     Flag = "AutoFarmLevel",
     Callback = function(Value)
