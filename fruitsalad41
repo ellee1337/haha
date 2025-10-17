@@ -310,6 +310,38 @@ task.spawn(function()
     end
 end)
 
+------------------------------------------------------------
+-- 👻 Invisible Mode
+------------------------------------------------------------
+local Invisible = {Enabled = false}
+local function setInvisibility(state)
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") or part:IsA("Decal") then
+            if state then
+                part.Transparency = 1
+                if part:IsA("Decal") then part.Transparency = 1 end
+            else
+                if part.Name ~= "HumanoidRootPart" then
+                    part.Transparency = 0
+                end
+            end
+        elseif part:IsA("Accessory") and part:FindFirstChild("Handle") then
+            part.Handle.Transparency = state and 1 or 0
+        end
+    end
+end
+
+-- Monitor invisibility on respawn
+LocalPlayer.CharacterAdded:Connect(function(char)
+    if Invisible.Enabled then
+        task.wait(1)
+        setInvisibility(true)
+    end
+end)
+
 
 ------------------------------------------------------------
 -- 👁️ ESP
@@ -489,9 +521,8 @@ MovementTab:CreateParagraph({
 local MiscTab = Window:CreateTab("🔧 Misc", 4483362458)
 MiscTab:CreateParagraph({
     Title = "Teleport Controls",
-    Content = "Press [H] to teleport to the lowest health player."
+    Content = "Press [J] to teleport to the lowest health player."
 })
-
 MiscTab:CreateToggle({
     Name = "Magnet Teleport (Behind Player)",
     CurrentValue = false,
@@ -503,5 +534,14 @@ MiscTab:CreateToggle({
         else
             currentTarget = nil
         end
+    end,
+})
+MiscTab:CreateToggle({
+    Name = "Invisible Mode (Client-Side)",
+    CurrentValue = false,
+    Flag = "Invisible_Toggle",
+    Callback = function(Value)
+        Invisible.Enabled = Value
+        setInvisibility(Value)
     end,
 })
