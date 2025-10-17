@@ -201,7 +201,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ------------------------------------------------------------
--- 🔄 Teleport Magnet (MiscTab Toggle + J Switch to another player)
+-- 🔄 Teleport Magnet (Behind Player + MiscTab Toggle)
 ------------------------------------------------------------
 local currentTarget = nil
 local magnetActive = false
@@ -228,7 +228,7 @@ local function getLowestHealthPlayer()
     return target
 end
 
--- Function to get another random alive player (excluding current)
+-- Get another alive player (for key J)
 local function getAnotherPlayer()
     local alivePlayers = {}
     for _, player in pairs(Players:GetPlayers()) do
@@ -245,30 +245,33 @@ local function getAnotherPlayer()
     end
 end
 
--- Key J to teleport to another player
+-- Press J → switch to another player manually
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
     if key:lower() == "j" and magnetActive then
         currentTarget = getAnotherPlayer()
     end
 end)
 
--- Continuously follow the target if magnet is active
+-- Auto follow target behind their back
 RunService.Heartbeat:Connect(function()
     if magnetActive then
-        -- Auto switch if current target is dead or removed
+        -- Auto switch if target dies
         if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart")
             or currentTarget.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
             currentTarget = getLowestHealthPlayer()
             if not currentTarget then
-                magnetActive = false -- no alive players left
+                magnetActive = false
                 return
             end
         end
 
-        -- Follow the current target
+        -- Move behind the target smoothly
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.CFrame = currentTarget.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+        local targetHRP = currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart")
+        if hrp and targetHRP then
+            -- Offset 3 studs behind
+            local behindPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 3)
+            hrp.CFrame = CFrame.new(behindPos, targetHRP.Position)
         end
     end
 end)
@@ -490,7 +493,7 @@ MiscTab:CreateParagraph({
 })
 
 MiscTab:CreateToggle({
-    Name = "Magnet Teleport to Lowest Health Player",
+    Name = "Magnet Teleport (Behind Player)",
     CurrentValue = false,
     Flag = "MagnetToggle",
     Callback = function(Value)
