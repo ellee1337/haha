@@ -145,7 +145,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ⚡ Ultra Fast Auto Attack
 RunService.Heartbeat:Connect(function()
     if Combat.AutoAttack then
         -- Instantly spam left clicks nonstop
@@ -153,6 +152,25 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+------------------------------------------------------------
+-- ⚡ H Key Toggle for Auto Attack
+------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.H then
+        Combat.AutoAttack = not Combat.AutoAttack
+        local status = Combat.AutoAttack and "✅ Auto Attack Enabled" or "❌ Auto Attack Disabled"
+
+        -- Notify on toggle
+        pcall(function()
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "⚔️ Combat System",
+                Text = status,
+                Duration = 3
+            })
+        end)
+    end
+end)
 ------------------------------------------------------------
 -- 🏃 Movement
 ------------------------------------------------------------
@@ -476,14 +494,6 @@ CombatTab:CreateToggle({
     end,
 })
 CombatTab:CreateToggle({
-    Name = "Auto Attack Nearest Player",
-    CurrentValue = false,
-    Flag = "AutoAttack_Toggle",
-    Callback = function(Value)
-        Combat.AutoAttack = Value
-    end,
-})
-CombatTab:CreateToggle({
     Name = "Auto Skill PVP (Skills + Attack)",
     CurrentValue = false,
     Flag = "AutoSkillPvp",
@@ -499,7 +509,10 @@ CombatTab:CreateToggle({
         AutoFarm.Enabled = Value
     end,
 })
-
+CombatTab:CreateParagraph({
+    Title = "Auto Attack",
+    Content = "Press [H] to auto attack a player."
+})
 
 -- Movement Tab
 
@@ -555,10 +568,10 @@ MiscTab:CreateToggle({
 
 MiscTab:CreateSlider({
     Name = "Magnet Distance",
-    Range = {1, 10},
+    Range = {1, 8},
     Increment = 0.5,
     Suffix = "studs",
-    CurrentValue = 3,
+    CurrentValue = 5,
     Flag = "MagnetDistance",
     Callback = function(value)
         magnetDistance = value
