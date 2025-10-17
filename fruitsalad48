@@ -32,7 +32,7 @@ local Highlights = {}
 local BillboardCache = {}
 
 ------------------------------------------------------------
--- ✈️ Fly Script
+-- ✈️ Fly Script (MiscTab Toggle)
 ------------------------------------------------------------
 local flying = false
 local ctrl, lastctrl = {f=0,b=0,l=0,r=0}, {f=0,b=0,l=0,r=0}
@@ -85,24 +85,20 @@ local function Fly()
     bv:Destroy()
 end
 
--- Fly Controls
-LocalPlayer:GetMouse().KeyDown:Connect(function(key)
-    if key:lower() == "e" then
-        flying = not flying
-        if flying then task.spawn(Fly) end
-    end
-    if key:lower() == "w" then ctrl.f = 1
-    elseif key:lower() == "s" then ctrl.b = -1
-    elseif key:lower() == "a" then ctrl.l = -1
-    elseif key:lower() == "d" then ctrl.r = 1 end
+-- Fly movement controls (keep WASD)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.W then ctrl.f = 1
+    elseif input.KeyCode == Enum.KeyCode.S then ctrl.b = -1
+    elseif input.KeyCode == Enum.KeyCode.A then ctrl.l = -1
+    elseif input.KeyCode == Enum.KeyCode.D then ctrl.r = 1 end
 end)
 
-LocalPlayer:GetMouse().KeyUp:Connect(function(key)
-    if key:lower() == "w" then ctrl.f = 0
-    elseif key:lower() == "s" then ctrl.b = 0
-    elseif key:lower() == "a" then ctrl.l = 0
-    elseif key:lower() == "d" then ctrl.r = 0
-    end
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.W then ctrl.f = 0
+    elseif input.KeyCode == Enum.KeyCode.S then ctrl.b = 0
+    elseif input.KeyCode == Enum.KeyCode.A then ctrl.l = 0
+    elseif input.KeyCode == Enum.KeyCode.D then ctrl.r = 0 end
 end)
 
 ------------------------------------------------------------
@@ -574,6 +570,17 @@ local MiscTab = Window:CreateTab("🔧 Misc", 4483362458)
 MiscTab:CreateParagraph({
     Title = "Teleport Controls",
     Content = "Press [J] to teleport to the lowest health player."
+})
+MiscTab:CreateToggle({
+    Name = "Fly Mode",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(Value)
+        flying = Value
+        if flying then
+            task.spawn(Fly)
+        end
+    end,
 })
 MiscTab:CreateToggle({
     Name = "Magnet Teleport (Behind Player)",
