@@ -300,41 +300,38 @@ task.spawn(function()
 end)
 
 ------------------------------------------------------------
--- ⚔️ Auto Skill PVP (Auto Skill PVP)
+-- ⚔️ Auto Skill PVP
 ------------------------------------------------------------
 local AutoPvp = {Enabled = false}
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Function to press key only (no mouse click)
 local function useSkillKeyPvp(key)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
     task.wait(0.5)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
-    task.wait(0.5)
-    -- ⚡ Instant left click (super fast)
-    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-    task.wait(0)
-    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
 end
 
--- Auto loop for skilling + fast clicking
+-- Auto loop for skilling
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(1.0) do
         if AutoPvp.Enabled then
             useSkillKeyPvp("One")
-            task.wait(1.5)
+            task.wait(1.3)
             useSkillKeyPvp("Two")
-            task.wait(1.5)
+            task.wait(1.3)
             useSkillKeyPvp("Three")
-            task.wait(1.5)
+            task.wait(1.3)
             useSkillKeyPvp("Four")
-            task.wait(1.5)
+            task.wait(1.3)
             useSkillKeyPvp("Five")
-            task.wait(1.5)
+            task.wait(1.3)
             useSkillKeyPvp("E")
-            task.wait(1.5)
+            task.wait(1.3)
             useSkillKeyPvp("G")
         end
     end
 end)
-
 ------------------------------------------------------------
 -- 👻 Invisible Mode
 ------------------------------------------------------------
