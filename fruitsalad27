@@ -201,13 +201,13 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ------------------------------------------------------------
--- 🔄 Teleport to Lowest Health Player [H]
+-- 🔄 Teleport Magnet to Lowest Health Player [H] / Release [J]
 ------------------------------------------------------------
 local currentTarget = nil
 
+-- Press H to select next lowest health player
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
     if key:lower() == "h" then
-        -- Find next lowest health player
         local lowestHealth = math.huge
         local nextTarget = nil
         local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -227,6 +227,9 @@ LocalPlayer:GetMouse().KeyDown:Connect(function(key)
         end
 
         currentTarget = nextTarget
+    elseif key:lower() == "j" then
+        -- Press J to stop following
+        currentTarget = nil
     end
 end)
 
