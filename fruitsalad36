@@ -274,33 +274,38 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ------------------------------------------------------------
--- 🔥 Auto Skills (Combat Tab) with Left Click
+-- ⚔️ Auto Farm Level (Auto Skill Spam)
 ------------------------------------------------------------
-local AutoSkills = {
-    Skill1 = false, -- key "1"
-    Skill2 = false, -- key "2"
-    Skill3 = false, -- key "3"
-    Skill4 = false, -- key "4"
-    Skill5 = false  -- key "G"
-}
+local AutoFarm = {Enabled = false}
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
 
--- Function to simulate key press + left click
-local function useSkill(key)
-    -- Fire key event
-    local UserInputService = game:GetService("UserInputService")
-    UserInputService.InputBegan:Fire({KeyCode = Enum.KeyCode[key], UserInputType = Enum.UserInputType.Keyboard})
-    -- Fire left mouse click
-    mouse1click()
+-- Function to press key + left click
+local function useSkillKey(key)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+    task.wait(0.05)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
 end
 
--- Auto trigger skills while magnet active
-RunService.Heartbeat:Connect(function()
-    if magnetActive then
-        if AutoSkills.Skill1 then useSkill("One") end
-        if AutoSkills.Skill2 then useSkill("Two") end
-        if AutoSkills.Skill3 then useSkill("Three") end
-        if AutoSkills.Skill4 then useSkill("Four") end
-        if AutoSkills.Skill5 then useSkill("G") end
+-- Auto loop for skilling
+task.spawn(function()
+    while task.wait(0.3) do
+        if AutoFarm.Enabled then
+            useSkillKey("One")
+            task.wait(0.2)
+            useSkillKey("Two")
+            task.wait(0.2)
+            useSkillKey("Three")
+            task.wait(0.2)
+            useSkillKey("Four")
+            task.wait(0.2)
+            useSkillKey("G")
+        end
     end
 end)
 
@@ -436,47 +441,11 @@ CombatTab:CreateToggle({
     end,
 })
 CombatTab:CreateToggle({
-    Name = "Auto Skill 1",
+    Name = "Auto Farm Level (Auto Skills)",
     CurrentValue = false,
-    Flag = "AutoSkill1",
+    Flag = "AutoFarmLevel",
     Callback = function(Value)
-        AutoSkills.Skill1 = Value
-    end,
-})
-
-CombatTab:CreateToggle({
-    Name = "Auto Skill 2",
-    CurrentValue = false,
-    Flag = "AutoSkill2",
-    Callback = function(Value)
-        AutoSkills.Skill2 = Value
-    end,
-})
-
-CombatTab:CreateToggle({
-    Name = "Auto Skill 3",
-    CurrentValue = false,
-    Flag = "AutoSkill3",
-    Callback = function(Value)
-        AutoSkills.Skill3 = Value
-    end,
-})
-
-CombatTab:CreateToggle({
-    Name = "Auto Skill 4",
-    CurrentValue = false,
-    Flag = "AutoSkill4",
-    Callback = function(Value)
-        AutoSkills.Skill4 = Value
-    end,
-})
-
-CombatTab:CreateToggle({
-    Name = "Auto Skill 5 (G)",
-    CurrentValue = false,
-    Flag = "AutoSkill5",
-    Callback = function(Value)
-        AutoSkills.Skill5 = Value
+        AutoFarm.Enabled = Value
     end,
 })
 
