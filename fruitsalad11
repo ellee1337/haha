@@ -1,5 +1,4 @@
--- ✅ Fly + ESP Script with Simple Rayfield UI + Color Picker
--- ⚙️ Works with any game that uses HumanoidRootPart
+-- ✅ Fly + ESP Script with Simple Rayfield UI (No Color Picker)
 -- 🖱️ Press E to toggle fly
 
 ----------------------------------------------------
@@ -18,13 +17,9 @@ local ESP = {
     Color = Color3.fromRGB(255, 170, 0),
     FaceCamera = false,
     Names = true,
-    TeamColor = true,
     Thickness = 2,
-    AttachShift = 1,
-    TeamMates = true,
     Players = true,
     Objects = setmetatable({}, {__mode="kv"}),
-    Overrides = {}
 }
 
 local cam = workspace.CurrentCamera
@@ -198,7 +193,7 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 ----------------------------------------------------
--- 🎨 Rayfield UI Controls
+-- 🎛️ Rayfield UI Setup
 ----------------------------------------------------
 local Window = Rayfield:CreateWindow({
     Name = "Fly + ESP Menu",
@@ -230,13 +225,5 @@ ESPTab:CreateToggle({
     CurrentValue = true,
     Callback = function(value)
         ESP.Names = value
-    end
-})
-
-ESPTab:CreateColorPicker({
-    Name = "ESP Color",
-    Color = Color3.fromRGB(255, 170, 0),
-    Callback = function(color)
-        ESP.Color = color
     end
 })
