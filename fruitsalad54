@@ -145,7 +145,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Auto Attack
+-- ⚡ Ultra Fast Auto Attack (No Cooldown)
 RunService.Heartbeat:Connect(function()
     if Combat.AutoAttack then
         local target = getNearestPlayer()
@@ -153,9 +153,9 @@ RunService.Heartbeat:Connect(function()
             local localChar = LocalPlayer.Character
             if localChar and localChar:FindFirstChild("HumanoidRootPart") then
                 local distance = (target.Character.HumanoidRootPart.Position - localChar.HumanoidRootPart.Position).Magnitude
-                
-                if distance < 10 and tick() - Combat.AttackCooldown > 0.01 then
-                    Combat.AttackCooldown = tick()
+
+                -- Attack instantly and continuously if close
+                if distance < 10 then
                     mouse1click()
                 end
             end
