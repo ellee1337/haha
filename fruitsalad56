@@ -179,7 +179,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-
 ------------------------------------------------------------
 -- 🧲 Teleport Magnet (Behind Player + MiscTab Slider)
 ------------------------------------------------------------
@@ -232,22 +231,6 @@ LocalPlayer:GetMouse().KeyDown:Connect(function(key)
         currentTarget = getAnotherPlayer()
     end
 end)
-
--- ⚙️ Rayfield UI controls (add these under your MiscTab)
-MiscTab:CreateToggle({
-    Name = "Enable Teleport Magnet",
-    CurrentValue = false,
-    Flag = "TeleportMagnet",
-    Callback = function(state)
-        magnetActive = state
-        if state then
-            currentTarget = getLowestHealthPlayer()
-        else
-            currentTarget = nil
-        end
-    end
-})
-
 
 -- 🔄 Follow behind target smoothly
 RunService.Heartbeat:Connect(function()
@@ -567,17 +550,17 @@ MiscTab:CreateToggle({
     end,
 })
 MiscTab:CreateToggle({
-    Name = "Magnet Teleport (Behind Player)",
+    Name = "Enable Teleport Magnet",
     CurrentValue = false,
-    Flag = "MagnetToggle",
-    Callback = function(Value)
-        magnetActive = Value
-        if Value then
+    Flag = "TeleportMagnet",
+    Callback = function(state)
+        magnetActive = state
+        if state then
             currentTarget = getLowestHealthPlayer()
         else
             currentTarget = nil
         end
-    end,
+    end
 })
 
 MiscTab:CreateSlider({
