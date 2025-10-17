@@ -1,6 +1,6 @@
--- 🌌 Fly + ESP + Color Picker (Rayfield UI)
--- ✅ Works with Rayfield and most executors
--- 💡 Toggle Fly with "E" or UI button
+-- 🌌 Fly + ESP (BillboardGui Version) with Rayfield UI + Color Picker
+-- ✅ Works in all executors
+-- 👁️ ESP shows names + colored boxes
 
 -- 🧩 Load Rayfield
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -12,15 +12,15 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+local Camera = workspace.CurrentCamera
 
 ----------------------------------------------------------------
 -- ✈️ Fly Script
 ----------------------------------------------------------------
 local flying = false
-local ctrl = {f = 0, b = 0, l = 0, r = 0}
-local lastctrl = {f = 0, b = 0, l = 0, r = 0}
-local speed = 0
-local maxspeed = 50
+local ctrl = {f=0,b=0,l=0,r=0}
+local lastctrl = {f=0,b=0,l=0,r=0}
+local speed, maxspeed = 0, 50
 local bg, bv
 
 local function Fly()
@@ -31,172 +31,148 @@ local function Fly()
 
 	bg = Instance.new("BodyGyro", hrp)
 	bg.P = 9e4
-	bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
 	bg.CFrame = hrp.CFrame
 
 	bv = Instance.new("BodyVelocity", hrp)
-	bv.Velocity = Vector3.new(0, 0.1, 0)
-	bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	bv.Velocity = Vector3.new(0,0.1,0)
+	bv.MaxForce = Vector3.new(9e9,9e9,9e9)
 
 	hum.PlatformStand = true
-
-	game.StarterGui:SetCore("SendNotification", {Title="Fly Activated", Text="Use [WASD] to move", Duration=2})
+	game.StarterGui:SetCore("SendNotification", {Title="Fly ON", Text="Press [E] or toggle to stop", Duration=2})
 
 	while flying do
 		task.wait()
-		if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+		if ctrl.l+ctrl.r~=0 or ctrl.f+ctrl.b~=0 then
 			speed = math.clamp(speed + 0.5, 0, maxspeed)
-		elseif speed ~= 0 then
+		elseif speed~=0 then
 			speed = math.clamp(speed - 1, 0, maxspeed)
 		end
-
-		if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
-			bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (ctrl.f + ctrl.b))
-				+ ((workspace.CurrentCamera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * .2, 0)).p
-				- workspace.CurrentCamera.CFrame.p)) * speed
-			lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
-		elseif speed ~= 0 then
-			bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (lastctrl.f + lastctrl.b))
-				+ ((workspace.CurrentCamera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * .2, 0)).p
-				- workspace.CurrentCamera.CFrame.p)) * speed
+		if ctrl.l+ctrl.r~=0 or ctrl.f+ctrl.b~=0 then
+			bv.Velocity = ((Camera.CFrame.LookVector * (ctrl.f + ctrl.b))
+				+ ((Camera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b)*.2, 0)).p - Camera.CFrame.p)) * speed
+			lastctrl = {f=ctrl.f,b=ctrl.b,l=ctrl.l,r=ctrl.r}
+		elseif speed~=0 then
+			bv.Velocity = ((Camera.CFrame.LookVector * (lastctrl.f + lastctrl.b))
+				+ ((Camera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b)*.2, 0)).p - Camera.CFrame.p)) * speed
 		else
-			bv.Velocity = Vector3.new(0, 0.1, 0)
+			bv.Velocity = Vector3.new(0,0.1,0)
 		end
-
-		bg.CFrame = workspace.CurrentCamera.CFrame
+		bg.CFrame = Camera.CFrame
 	end
 
 	hum.PlatformStand = false
 	bg:Destroy()
 	bv:Destroy()
-	game.StarterGui:SetCore("SendNotification", {Title="Fly Deactivated", Text="Rayfield UI", Duration=2})
+	game.StarterGui:SetCore("SendNotification", {Title="Fly OFF", Text="Rayfield UI", Duration=2})
 end
 
 Mouse.KeyDown:Connect(function(key)
-	if key:lower() == "e" then
+	if key:lower()=="e" then
 		flying = not flying
 		if flying then task.spawn(Fly) end
 	end
-	if key:lower() == "w" then ctrl.f = 1
-	elseif key:lower() == "s" then ctrl.b = -1
-	elseif key:lower() == "a" then ctrl.l = -1
-	elseif key:lower() == "d" then ctrl.r = 1 end
+	if key:lower()=="w" then ctrl.f=1
+	elseif key:lower()=="s" then ctrl.b=-1
+	elseif key:lower()=="a" then ctrl.l=-1
+	elseif key:lower()=="d" then ctrl.r=1 end
 end)
-
 Mouse.KeyUp:Connect(function(key)
-	if key:lower() == "w" then ctrl.f = 0
-	elseif key:lower() == "s" then ctrl.b = 0
-	elseif key:lower() == "a" then ctrl.l = 0
-	elseif key:lower() == "d" then ctrl.r = 0 end
+	if key:lower()=="w" then ctrl.f=0
+	elseif key:lower()=="s" then ctrl.b=0
+	elseif key:lower()=="a" then ctrl.l=0
+	elseif key:lower()=="d" then ctrl.r=0 end
 end)
 
 ----------------------------------------------------------------
--- 👁️ ESP Script
+-- 👁️ ESP (BillboardGui Version)
 ----------------------------------------------------------------
 local ESP = {
 	Enabled = false,
-	Color = Color3.fromRGB(255, 170, 0),
-	Objects = setmetatable({}, {__mode = "kv"})
+	Color = Color3.fromRGB(255,170,0),
+	Objects = {}
 }
 
-local cam = workspace.CurrentCamera
-
-local function Draw(obj, props)
-	local new = Drawing.new(obj)
-	for i,v in pairs(props or {}) do new[i] = v end
-	return new
-end
-
-local boxBase = {}
-boxBase.__index = boxBase
-
-function boxBase:Remove()
-	ESP.Objects[self.Object] = nil
-	for _,v in pairs(self.Components) do v.Visible = false v:Remove() end
-end
-
-function boxBase:Update()
-	if not self.PrimaryPart or not workspace:IsAncestorOf(self.PrimaryPart) then return self:Remove() end
-	local cf = self.PrimaryPart.CFrame
-	local size = Vector3.new(4,6,0)
-	local corners = {
-		cf * CFrame.new(size.X/2,size.Y/2,0),
-		cf * CFrame.new(-size.X/2,size.Y/2,0),
-		cf * CFrame.new(-size.X/2,-size.Y/2,0),
-		cf * CFrame.new(size.X/2,-size.Y/2,0)
-	}
-	local screen = {}
-	for i,v in ipairs(corners) do
-		local p, vis = cam:WorldToViewportPoint(v.Position)
-		if vis then screen[i] = Vector2.new(p.X,p.Y) end
+local function ClearESP()
+	for _,ui in pairs(ESP.Objects) do
+		if ui and ui.Parent then ui:Destroy() end
 	end
-	if #screen == 4 then
-		self.Components.Quad.Visible = ESP.Enabled
-		self.Components.Quad.PointA = screen[1]
-		self.Components.Quad.PointB = screen[2]
-		self.Components.Quad.PointC = screen[3]
-		self.Components.Quad.PointD = screen[4]
-		self.Components.Quad.Color = ESP.Color
-	else
-		self.Components.Quad.Visible = false
-	end
+	table.clear(ESP.Objects)
 end
 
-function ESP:Add(obj, options)
-	local root = options.PrimaryPart
-	if not root then return end
-	local box = setmetatable({
-		Object = obj,
-		PrimaryPart = root,
-		Components = {
-			Quad = Draw("Quad", {Thickness=2, Color=ESP.Color, Visible=false})
-		}
-	}, boxBase)
-	ESP.Objects[obj] = box
-end
+local function AddESP(player)
+	if player == LocalPlayer then return end
+	player.CharacterAdded:Connect(function(char)
+		task.wait(1)
+		if not ESP.Enabled then return end
 
-local function AddChar(char)
-	local root = char:WaitForChild("HumanoidRootPart", 10)
-	if root then ESP:Add(char, {PrimaryPart=root}) end
-end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			local billboard = Instance.new("BillboardGui", hrp)
+			billboard.Name = "ESP"
+			billboard.AlwaysOnTop = true
+			billboard.Size = UDim2.new(0,200,0,50)
+			billboard.StudsOffset = Vector3.new(0,3,0)
 
-for _,p in pairs(Players:GetPlayers()) do
-	if p ~= LocalPlayer and p.Character then AddChar(p.Character) end
-	p.CharacterAdded:Connect(AddChar)
-end
+			local box = Instance.new("Frame", billboard)
+			box.AnchorPoint = Vector2.new(0.5,0.5)
+			box.Position = UDim2.new(0.5,0,0.5,0)
+			box.Size = UDim2.new(0,100,0,130)
+			box.BackgroundTransparency = 1
+			box.BorderSizePixel = 0
 
-Players.PlayerAdded:Connect(function(p)
-	p.CharacterAdded:Connect(AddChar)
-end)
+			local outline = Instance.new("UIStroke", box)
+			outline.Thickness = 2
+			outline.Color = ESP.Color
 
-RunService.RenderStepped:Connect(function()
-	if ESP.Enabled then
-		for _,v in pairs(ESP.Objects) do
-			local ok, err = pcall(v.Update, v)
-			if not ok then warn(err) end
+			local nameLabel = Instance.new("TextLabel", billboard)
+			nameLabel.AnchorPoint = Vector2.new(0.5,1)
+			nameLabel.Position = UDim2.new(0.5,0,0,0)
+			nameLabel.Size = UDim2.new(1,0,0,20)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Text = player.Name
+			nameLabel.TextColor3 = ESP.Color
+			nameLabel.TextStrokeTransparency = 0.5
+			nameLabel.TextScaled = true
+
+			ESP.Objects[player] = billboard
 		end
-	else
-		for _,v in pairs(ESP.Objects) do
-			if v.Components then
-				for _,comp in pairs(v.Components) do comp.Visible = false end
+	end)
+
+	if player.Character then
+		player.CharacterAdded:Wait()
+	end
+end
+
+local function ToggleESP(state)
+	ESP.Enabled = state
+	ClearESP()
+	if state then
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer then
+				AddESP(plr)
 			end
 		end
+		Players.PlayerAdded:Connect(AddESP)
+		game.StarterGui:SetCore("SendNotification",{Title="ESP ON",Text="ESP Activated",Duration=2})
+	else
+		game.StarterGui:SetCore("SendNotification",{Title="ESP OFF",Text="ESP Disabled",Duration=2})
 	end
-end)
+end
 
 ----------------------------------------------------------------
 -- 🎛️ Rayfield UI
 ----------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
-	Name = "⚡ Fly + ESP Panel ⚡",
+	Name = "⚡ Fly + ESP Control ⚡",
 	LoadingTitle = "Rayfield UI",
 	LoadingSubtitle = "by CookieCodes"
 })
 
-local MainTab = Window:CreateTab("Main Controls", 4483362458)
+local Tab = Window:CreateTab("Main Controls", 4483362458)
 
-MainTab:CreateToggle({
-	Name = "Fly Mode (Press E too)",
+Tab:CreateToggle({
+	Name = "Fly Mode (E Key too)",
 	CurrentValue = false,
 	Flag = "FlyToggle",
 	Callback = function(Value)
@@ -205,30 +181,38 @@ MainTab:CreateToggle({
 	end
 })
 
-MainTab:CreateToggle({
-	Name = "Enable ESP",
+Tab:CreateToggle({
+	Name = "Enable ESP (with Names)",
 	CurrentValue = false,
 	Flag = "ESPToggle",
 	Callback = function(Value)
-		ESP.Enabled = Value
+		ToggleESP(Value)
 	end
 })
 
-MainTab:CreateColorPicker({
+Tab:CreateColorPicker({
 	Name = "ESP Color",
 	Color = ESP.Color,
 	Flag = "ESPColor",
 	Callback = function(Color)
 		ESP.Color = Color
+		for _,ui in pairs(ESP.Objects) do
+			if ui:FindFirstChildOfClass("Frame") then
+				ui.Frame.UIStroke.Color = Color
+			end
+			if ui:FindFirstChildOfClass("TextLabel") then
+				ui.TextLabel.TextColor3 = Color
+			end
+		end
 	end
 })
 
-MainTab:CreateButton({
+Tab:CreateButton({
 	Name = "Show Info",
 	Callback = function()
 		Rayfield:Notify({
 			Title = "Controls",
-			Content = "Fly = [E] or toggle\nESP = Toggle Button",
+			Content = "Fly = [E] key or toggle\nESP = Shows boxes + player names",
 			Duration = 6
 		})
 	end
