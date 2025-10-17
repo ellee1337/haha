@@ -161,7 +161,7 @@ RunService.Heartbeat:Connect(function()
             if localChar and localChar:FindFirstChild("HumanoidRootPart") then
                 local distance = (target.Character.HumanoidRootPart.Position - localChar.HumanoidRootPart.Position).Magnitude
                 
-                if distance < 15 and tick() - Combat.AttackCooldown > 0.1 then
+                if distance < 10 and tick() - Combat.AttackCooldown > 0.1 then
                     Combat.AttackCooldown = tick()
                     mouse1click()
                 end
