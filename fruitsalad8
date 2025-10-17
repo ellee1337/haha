@@ -1,0 +1,235 @@
+-- 🌌 Fly + ESP + Color Picker (Rayfield UI)
+-- ✅ Works with Rayfield and most executors
+-- 💡 Toggle Fly with "E" or UI button
+
+-- 🧩 Load Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+----------------------------------------------------------------
+-- ⚙️ Services
+----------------------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+----------------------------------------------------------------
+-- ✈️ Fly Script
+----------------------------------------------------------------
+local flying = false
+local ctrl = {f = 0, b = 0, l = 0, r = 0}
+local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+local speed = 0
+local maxspeed = 50
+local bg, bv
+
+local function Fly()
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	local hrp = char.HumanoidRootPart
+	local hum = char:FindFirstChildOfClass("Humanoid")
+
+	bg = Instance.new("BodyGyro", hrp)
+	bg.P = 9e4
+	bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bg.CFrame = hrp.CFrame
+
+	bv = Instance.new("BodyVelocity", hrp)
+	bv.Velocity = Vector3.new(0, 0.1, 0)
+	bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+	hum.PlatformStand = true
+
+	game.StarterGui:SetCore("SendNotification", {Title="Fly Activated", Text="Use [WASD] to move", Duration=2})
+
+	while flying do
+		task.wait()
+		if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+			speed = math.clamp(speed + 0.5, 0, maxspeed)
+		elseif speed ~= 0 then
+			speed = math.clamp(speed - 1, 0, maxspeed)
+		end
+
+		if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+			bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (ctrl.f + ctrl.b))
+				+ ((workspace.CurrentCamera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * .2, 0)).p
+				- workspace.CurrentCamera.CFrame.p)) * speed
+			lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+		elseif speed ~= 0 then
+			bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (lastctrl.f + lastctrl.b))
+				+ ((workspace.CurrentCamera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * .2, 0)).p
+				- workspace.CurrentCamera.CFrame.p)) * speed
+		else
+			bv.Velocity = Vector3.new(0, 0.1, 0)
+		end
+
+		bg.CFrame = workspace.CurrentCamera.CFrame
+	end
+
+	hum.PlatformStand = false
+	bg:Destroy()
+	bv:Destroy()
+	game.StarterGui:SetCore("SendNotification", {Title="Fly Deactivated", Text="Rayfield UI", Duration=2})
+end
+
+Mouse.KeyDown:Connect(function(key)
+	if key:lower() == "e" then
+		flying = not flying
+		if flying then task.spawn(Fly) end
+	end
+	if key:lower() == "w" then ctrl.f = 1
+	elseif key:lower() == "s" then ctrl.b = -1
+	elseif key:lower() == "a" then ctrl.l = -1
+	elseif key:lower() == "d" then ctrl.r = 1 end
+end)
+
+Mouse.KeyUp:Connect(function(key)
+	if key:lower() == "w" then ctrl.f = 0
+	elseif key:lower() == "s" then ctrl.b = 0
+	elseif key:lower() == "a" then ctrl.l = 0
+	elseif key:lower() == "d" then ctrl.r = 0 end
+end)
+
+----------------------------------------------------------------
+-- 👁️ ESP Script
+----------------------------------------------------------------
+local ESP = {
+	Enabled = false,
+	Color = Color3.fromRGB(255, 170, 0),
+	Objects = setmetatable({}, {__mode = "kv"})
+}
+
+local cam = workspace.CurrentCamera
+
+local function Draw(obj, props)
+	local new = Drawing.new(obj)
+	for i,v in pairs(props or {}) do new[i] = v end
+	return new
+end
+
+local boxBase = {}
+boxBase.__index = boxBase
+
+function boxBase:Remove()
+	ESP.Objects[self.Object] = nil
+	for _,v in pairs(self.Components) do v.Visible = false v:Remove() end
+end
+
+function boxBase:Update()
+	if not self.PrimaryPart or not workspace:IsAncestorOf(self.PrimaryPart) then return self:Remove() end
+	local cf = self.PrimaryPart.CFrame
+	local size = Vector3.new(4,6,0)
+	local corners = {
+		cf * CFrame.new(size.X/2,size.Y/2,0),
+		cf * CFrame.new(-size.X/2,size.Y/2,0),
+		cf * CFrame.new(-size.X/2,-size.Y/2,0),
+		cf * CFrame.new(size.X/2,-size.Y/2,0)
+	}
+	local screen = {}
+	for i,v in ipairs(corners) do
+		local p, vis = cam:WorldToViewportPoint(v.Position)
+		if vis then screen[i] = Vector2.new(p.X,p.Y) end
+	end
+	if #screen == 4 then
+		self.Components.Quad.Visible = ESP.Enabled
+		self.Components.Quad.PointA = screen[1]
+		self.Components.Quad.PointB = screen[2]
+		self.Components.Quad.PointC = screen[3]
+		self.Components.Quad.PointD = screen[4]
+		self.Components.Quad.Color = ESP.Color
+	else
+		self.Components.Quad.Visible = false
+	end
+end
+
+function ESP:Add(obj, options)
+	local root = options.PrimaryPart
+	if not root then return end
+	local box = setmetatable({
+		Object = obj,
+		PrimaryPart = root,
+		Components = {
+			Quad = Draw("Quad", {Thickness=2, Color=ESP.Color, Visible=false})
+		}
+	}, boxBase)
+	ESP.Objects[obj] = box
+end
+
+local function AddChar(char)
+	local root = char:WaitForChild("HumanoidRootPart", 10)
+	if root then ESP:Add(char, {PrimaryPart=root}) end
+end
+
+for _,p in pairs(Players:GetPlayers()) do
+	if p ~= LocalPlayer and p.Character then AddChar(p.Character) end
+	p.CharacterAdded:Connect(AddChar)
+end
+
+Players.PlayerAdded:Connect(function(p)
+	p.CharacterAdded:Connect(AddChar)
+end)
+
+RunService.RenderStepped:Connect(function()
+	if ESP.Enabled then
+		for _,v in pairs(ESP.Objects) do
+			local ok, err = pcall(v.Update, v)
+			if not ok then warn(err) end
+		end
+	else
+		for _,v in pairs(ESP.Objects) do
+			if v.Components then
+				for _,comp in pairs(v.Components) do comp.Visible = false end
+			end
+		end
+	end
+end)
+
+----------------------------------------------------------------
+-- 🎛️ Rayfield UI
+----------------------------------------------------------------
+local Window = Rayfield:CreateWindow({
+	Name = "⚡ Fly + ESP Panel ⚡",
+	LoadingTitle = "Rayfield UI",
+	LoadingSubtitle = "by CookieCodes"
+})
+
+local MainTab = Window:CreateTab("Main Controls", 4483362458)
+
+MainTab:CreateToggle({
+	Name = "Fly Mode (Press E too)",
+	CurrentValue = false,
+	Flag = "FlyToggle",
+	Callback = function(Value)
+		flying = Value
+		if flying then task.spawn(Fly) end
+	end
+})
+
+MainTab:CreateToggle({
+	Name = "Enable ESP",
+	CurrentValue = false,
+	Flag = "ESPToggle",
+	Callback = function(Value)
+		ESP.Enabled = Value
+	end
+})
+
+MainTab:CreateColorPicker({
+	Name = "ESP Color",
+	Color = ESP.Color,
+	Flag = "ESPColor",
+	Callback = function(Color)
+		ESP.Color = Color
+	end
+})
+
+MainTab:CreateButton({
+	Name = "Show Info",
+	Callback = function()
+		Rayfield:Notify({
+			Title = "Controls",
+			Content = "Fly = [E] or toggle\nESP = Toggle Button",
+			Duration = 6
+		})
+	end
+})
