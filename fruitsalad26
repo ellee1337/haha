@@ -203,10 +203,13 @@ end)
 ------------------------------------------------------------
 -- 🔄 Teleport to Lowest Health Player [H]
 ------------------------------------------------------------
+local currentTarget = nil
+
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
     if key:lower() == "h" then
+        -- Find next lowest health player
         local lowestHealth = math.huge
-        local targetPlayer = nil
+        local nextTarget = nil
         local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if not localHRP then return end
 
@@ -215,16 +218,24 @@ LocalPlayer:GetMouse().KeyDown:Connect(function(key)
                 local hum = player.Character:FindFirstChildOfClass("Humanoid")
                 local hrp = player.Character:FindFirstChild("HumanoidRootPart")
                 if hum and hrp and hum.Health > 0 then
-                    if hum.Health < lowestHealth then
+                    if player ~= currentTarget and hum.Health < lowestHealth then
                         lowestHealth = hum.Health
-                        targetPlayer = player
+                        nextTarget = player
                     end
                 end
             end
         end
 
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+        currentTarget = nextTarget
+    end
+end)
+
+-- Continuously follow the current target
+RunService.Heartbeat:Connect(function()
+    if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = currentTarget.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
         end
     end
 end)
