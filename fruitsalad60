@@ -371,6 +371,44 @@ end)
 
 
 ------------------------------------------------------------
+-- 💪 Anti Ragdoll System
+------------------------------------------------------------
+local AntiRagdoll = {Enabled = false}
+
+-- Function to disable ragdoll constraints (e.g., BallSocket, Hinge, etc.)
+local function disableRagdoll()
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BallSocketConstraint") or part:IsA("HingeConstraint") or part:IsA("SpringConstraint") then
+            part:Destroy()
+        elseif part:IsA("BodyVelocity") or part:IsA("BodyGyro") or part:IsA("VectorForce") then
+            part:Destroy()
+        end
+    end
+end
+
+-- Keep humanoid from getting ragdolled or flung
+RunService.Heartbeat:Connect(function()
+    if AntiRagdoll.Enabled then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid").PlatformStand = false
+            disableRagdoll()
+        end
+    end
+end)
+
+-- Re-apply when respawning
+LocalPlayer.CharacterAdded:Connect(function(char)
+    if AntiRagdoll.Enabled then
+        task.wait(1)
+        disableRagdoll()
+    end
+end)
+
+
+------------------------------------------------------------
 -- 👁️ ESP
 ------------------------------------------------------------
 -- Chams
@@ -577,6 +615,18 @@ MiscTab:CreateSlider({
         magnetDistance = value
     end
 })
+-- UI Toggle in MiscTab
+MiscTab:CreateToggle({
+    Name = "Anti Ragdoll (No Knockback / No Fall)",
+    CurrentValue = false,
+    Flag = "AntiRagdoll_Toggle",
+    Callback = function(Value)
+        AntiRagdoll.Enabled = Value
+        if Value then
+            disableRagdoll()
+        end
+    end,
+})
 MiscTab:CreateToggle({
     Name = "Invisible Mode (Client-Side)",
     CurrentValue = false,
@@ -586,6 +636,8 @@ MiscTab:CreateToggle({
         setInvisibility(Value)
     end,
 })
+
+
 
 
 ------------------------------------------------------------
