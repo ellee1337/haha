@@ -1,12 +1,28 @@
--- // Services
+-- // Load Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- // Window Setup
+local Window = Rayfield:CreateWindow({
+    Name = "Freeze Boosts Menu",
+    LoadingTitle = "🧊 Boost Control",
+    LoadingSubtitle = "by cookie codes",
+    ConfigurationSaving = {
+        Enabled = false
+    }
+})
+
+----------------------------------------------------------------
+-- // Services and Paths
+----------------------------------------------------------------
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Path = LocalPlayer.PlayerGui:WaitForChild("Boosts_Display").Frame.DisplayFrame
 
--- // Boost List
 local Boosts = {"Jump", "Speed", "Tightrope", "Avalanche", "Fall Resistance", "Invincibility"}
 
--- // Functions
+----------------------------------------------------------------
+-- // Core Functions
+----------------------------------------------------------------
 local function Disable(boost)
     local Duration = boost:FindFirstChild("Duration")
     local Timer = boost:FindFirstChild("Timer_LocalScript")
@@ -29,62 +45,45 @@ local function FreezeBoosts()
 end
 
 ----------------------------------------------------------------
--- 🪟 UI Setup
+-- // Create Rayfield Tab & Section
 ----------------------------------------------------------------
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "FreezeBoostsUI"
+local MainTab = Window:CreateTab("🧊 Boost Freezer", "Snowflake")
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 120)
-frame.Position = UDim2.new(0.85, 0, 0.4, 0)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-title.Text = "🧊 Freeze Boosts"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 16
-title.Font = Enum.Font.GothamBold
-
-local toggle = Instance.new("TextButton", frame)
-toggle.Size = UDim2.new(0.8, 0, 0, 40)
-toggle.Position = UDim2.new(0.1, 0, 0.4, 0)
-toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-toggle.Text = "OFF"
-toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggle.TextSize = 18
-toggle.Font = Enum.Font.GothamBold
-toggle.AutoButtonColor = true
-
--- Rounded corners
-local function round(obj, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius)
-    corner.Parent = obj
-end
-
-round(frame, 12)
-round(title, 12)
-round(toggle, 8)
+local Section = MainTab:CreateSection("Freeze All Boosts")
 
 ----------------------------------------------------------------
--- 🎮 Button Logic
+-- // Toggle Button
 ----------------------------------------------------------------
-local isFrozen = false
+local Toggle = MainTab:CreateToggle({
+    Name = "Freeze Boosts",
+    CurrentValue = false,
+    Flag = "FreezeBoostsToggle",
+    Callback = function(Value)
+        if Value == true then
+            FreezeBoosts()
+            Rayfield:Notify({
+                Title = "Boosts Frozen",
+                Content = "All listed boosts have been frozen successfully.",
+                Duration = 4,
+                Image = "snowflake"
+            })
+        else
+            Rayfield:Notify({
+                Title = "Freeze Disabled",
+                Content = "Freeze Boosts toggle turned off.",
+                Duration = 3,
+                Image = "circle-slash"
+            })
+        end
+    end,
+})
 
-toggle.MouseButton1Click:Connect(function()
-    isFrozen = not isFrozen
-
-    if isFrozen then
-        FreezeBoosts()
-        toggle.Text = "ON"
-        toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    else
-        toggle.Text = "OFF"
-        toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    end
-end)
+----------------------------------------------------------------
+-- // UI Ready Notification
+----------------------------------------------------------------
+Rayfield:Notify({
+    Title = "Freeze Boosts Menu Loaded",
+    Content = "UI successfully initialized.",
+    Duration = 3,
+    Image = "check"
+})
