@@ -1,0 +1,471 @@
+-- 🌀 Enhanced Combat + ESP Script with Rayfield UI
+-- ✅ Fly, ESP, Aimlock, Speed, Auto-Attack, Auto-Respawn
+-- ⚠️ Press [E] to toggle Fly
+
+-- Load Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+------------------------------------------------------------
+-- ⚙️ Services
+------------------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+------------------------------------------------------------
+-- 🎯 Combat Settings
+------------------------------------------------------------
+local Combat = {
+    Aimlock = false,
+    AutoAttack = false,
+    AimlockTarget = nil,
+    AttackCooldown = 0
+}
+
+local Movement = {
+    SpeedEnabled = false,
+    WalkSpeed = 16,
+    NoDashCooldown = false
+}
+
+local Misc = {
+    AutoRespawn = false
+}
+
+------------------------------------------------------------
+-- ✈️ Fly Script
+------------------------------------------------------------
+local flying = false
+local ctrl, lastctrl = {f=0,b=0,l=0,r=0}, {f=0,b=0,l=0,r=0}
+local speed, maxspeed = 0, 50
+local bg, bv
+
+local function Fly()
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	local hrp = char.HumanoidRootPart
+	local hum = char:FindFirstChildOfClass("Humanoid")
+
+	bg = Instance.new("BodyGyro", hrp)
+	bg.P = 9e4
+	bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bg.CFrame = hrp.CFrame
+
+	bv = Instance.new("BodyVelocity", hrp)
+	bv.Velocity = Vector3.new(0, 0.1, 0)
+	bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+	hum.PlatformStand = true
+
+	while flying do
+		task.wait()
+		if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+			speed = math.clamp(speed + 0.5, 0, maxspeed)
+		elseif speed ~= 0 then
+			speed = math.clamp(speed - 1, 0, maxspeed)
+		end
+
+		if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+			bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (ctrl.f + ctrl.b))
+				+ ((workspace.CurrentCamera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * .2, 0)).p
+				- workspace.CurrentCamera.CFrame.p)) * speed
+			lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+		elseif speed ~= 0 then
+			bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (lastctrl.f + lastctrl.b))
+				+ ((workspace.CurrentCamera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * .2, 0)).p
+				- workspace.CurrentCamera.CFrame.p)) * speed
+		else
+			bv.Velocity = Vector3.new(0, 0.1, 0)
+		end
+
+		bg.CFrame = workspace.CurrentCamera.CFrame
+	end
+
+	hum.PlatformStand = false
+	bg:Destroy()
+	bv:Destroy()
+end
+
+-- Controls
+LocalPlayer:GetMouse().KeyDown:Connect(function(key)
+	if key:lower() == "e" then
+		flying = not flying
+		if flying then task.spawn(Fly) end
+	end
+	if key:lower() == "w" then ctrl.f = 1
+	elseif key:lower() == "s" then ctrl.b = -1
+	elseif key:lower() == "a" then ctrl.l = -1
+	elseif key:lower() == "d" then ctrl.r = 1 end
+end)
+
+LocalPlayer:GetMouse().KeyUp:Connect(function(key)
+	if key:lower() == "w" then ctrl.f = 0
+	elseif key:lower() == "s" then ctrl.b = 0
+	elseif key:lower() == "a" then ctrl.l = 0
+	elseif key:lower() == "d" then ctrl.r = 0 end
+end)
+
+------------------------------------------------------------
+-- 👁️ Chams ESP
+------------------------------------------------------------
+local ESP = {Enabled = false}
+local Highlights = {}
+
+local function createCham(player)
+	if player == LocalPlayer then return end
+	if not player.Character then return end
+	local char = player.Character
+	if not char:FindFirstChild("HumanoidRootPart") then return end
+
+	if Highlights[player] then
+		Highlights[player]:Destroy()
+	end
+
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "ESP_Highlight"
+	highlight.FillColor = Color3.fromRGB(255, 170, 0)
+	highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+	highlight.FillTransparency = 0.5
+	highlight.OutlineTransparency = 0
+	highlight.Adornee = char
+	highlight.Parent = game.CoreGui
+
+	Highlights[player] = highlight
+end
+
+local function removeCham(player)
+	if Highlights[player] then
+		Highlights[player]:Destroy()
+		Highlights[player] = nil
+	end
+end
+
+local function updateChams()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			if ESP.Enabled then
+				if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+					createCham(player)
+				else
+					removeCham(player)
+				end
+			else
+				removeCham(player)
+			end
+		end
+	end
+end
+
+Players.PlayerRemoving:Connect(removeCham)
+RunService.Heartbeat:Connect(updateChams)
+
+------------------------------------------------------------
+-- 🧠 ESP Distance + Names
+------------------------------------------------------------
+local BillboardCache = {}
+
+local function updateBillboards()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = player.Character.HumanoidRootPart
+			local distance = (hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+			local billboard = BillboardCache[player]
+
+			if ESP.Enabled then
+				if not billboard then
+					billboard = Instance.new("BillboardGui")
+					billboard.Size = UDim2.new(0, 50, 0, 15)
+					billboard.Adornee = hrp
+					billboard.AlwaysOnTop = true
+					billboard.Parent = game.CoreGui
+
+					local text = Instance.new("TextLabel", billboard)
+					text.Size = UDim2.new(1, 0, 1, 0)
+					text.BackgroundTransparency = 1
+					text.TextColor3 = Color3.fromRGB(255, 0, 0)
+					text.TextStrokeTransparency = 0.1
+					text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+					text.Font = Enum.Font.GothamBold
+					text.TextScaled = true
+					text.Name = "NameLabel"
+
+					BillboardCache[player] = billboard
+				end
+				billboard.Enabled = true
+				billboard.NameLabel.Text = string.format("%s [%dm]", player.Name, math.floor(distance))
+			else
+				if billboard then billboard.Enabled = false end
+			end
+		elseif BillboardCache[player] then
+			BillboardCache[player].Enabled = false
+		end
+	end
+end
+RunService.RenderStepped:Connect(updateBillboards)
+
+------------------------------------------------------------
+-- 🎯 Get Nearest Player
+------------------------------------------------------------
+local function getNearestPlayer()
+	local nearestPlayer = nil
+	local shortestDistance = math.huge
+	local localChar = LocalPlayer.Character
+	if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return nil end
+	local localHRP = localChar.HumanoidRootPart
+
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character then
+			local char = player.Character
+			local hrp = char:FindFirstChild("HumanoidRootPart")
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			
+			if hrp and hum and hum.Health > 0 then
+				local distance = (hrp.Position - localHRP.Position).Magnitude
+				if distance < shortestDistance then
+					shortestDistance = distance
+					nearestPlayer = player
+				end
+			end
+		end
+	end
+
+	return nearestPlayer
+end
+
+------------------------------------------------------------
+-- 🎯 Aimlock System
+------------------------------------------------------------
+RunService.RenderStepped:Connect(function()
+	if Combat.Aimlock then
+		local target = getNearestPlayer()
+		if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			Combat.AimlockTarget = target
+			local targetHRP = target.Character.HumanoidRootPart
+			Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHRP.Position)
+		else
+			Combat.AimlockTarget = nil
+		end
+	else
+		Combat.AimlockTarget = nil
+	end
+end)
+
+------------------------------------------------------------
+-- ⚔️ Auto Attack System
+------------------------------------------------------------
+RunService.Heartbeat:Connect(function()
+	if Combat.AutoAttack then
+		local target = getNearestPlayer()
+		if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			local localChar = LocalPlayer.Character
+			if localChar and localChar:FindFirstChild("HumanoidRootPart") then
+				local distance = (target.Character.HumanoidRootPart.Position - localChar.HumanoidRootPart.Position).Magnitude
+				
+				-- Attack if within range (adjust distance as needed for your game)
+				if distance < 15 and tick() - Combat.AttackCooldown > 0.1 then
+					Combat.AttackCooldown = tick()
+					
+					-- Trigger attack (this varies by game - adjust as needed)
+					-- Method 1: Mouse click simulation
+					mouse1click()
+					
+					-- Method 2: If game uses specific RemoteEvents, use this instead:
+					-- game:GetService("ReplicatedStorage").RemoteName:FireServer("Attack", target)
+				end
+			end
+		end
+	end
+end)
+
+------------------------------------------------------------
+-- 🏃 Speed Boost
+------------------------------------------------------------
+RunService.Heartbeat:Connect(function()
+	if Movement.SpeedEnabled then
+		local char = LocalPlayer.Character
+		if char then
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if hum then
+				hum.WalkSpeed = Movement.WalkSpeed
+			end
+		end
+	end
+end)
+
+------------------------------------------------------------
+-- 🚫 No Dash Cooldown (Anti-Cooldown)
+------------------------------------------------------------
+RunService.Heartbeat:Connect(function()
+	if Movement.NoDashCooldown then
+		local char = LocalPlayer.Character
+		if char then
+			-- This removes cooldowns by setting them to 0
+			-- Adjust based on your game's cooldown system
+			for _, v in pairs(char:GetDescendants()) do
+				if v:IsA("NumberValue") and (v.Name:lower():find("cooldown") or v.Name:lower():find("dash")) then
+					v.Value = 0
+				end
+			end
+		end
+	end
+end)
+
+------------------------------------------------------------
+-- 🔄 Auto Respawn
+------------------------------------------------------------
+LocalPlayer.CharacterAdded:Connect(function(char)
+	if Misc.AutoRespawn then
+		-- Wait for character to fully load
+		char:WaitForChild("Humanoid")
+	end
+end)
+
+-- Monitor death and auto-respawn
+RunService.Heartbeat:Connect(function()
+	if Misc.AutoRespawn then
+		local char = LocalPlayer.Character
+		if char then
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if hum and hum.Health <= 0 then
+				task.wait(1) -- Wait before respawning
+				LocalPlayer.Character:BreakJoints()
+				task.wait(0.5)
+				-- Trigger respawn (method varies by game)
+				-- Some games use: game:GetService("ReplicatedStorage").RespawnEvent:FireServer()
+			end
+		end
+	end
+end)
+
+------------------------------------------------------------
+-- 🔄 Teleport to Lowest Health Player on [H]
+------------------------------------------------------------
+LocalPlayer:GetMouse().KeyDown:Connect(function(key)
+	if key:lower() == "h" then
+		local lowestHealth = math.huge
+		local targetPlayer = nil
+		local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if not localHRP then return end
+
+		for _, player in pairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and player.Character then
+				local hum = player.Character:FindFirstChildOfClass("Humanoid")
+				local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+				if hum and hrp and hum.Health > 0 then
+					if hum.Health < lowestHealth then
+						lowestHealth = hum.Health
+						targetPlayer = player
+					end
+				end
+			end
+		end
+
+		if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+		end
+	end
+end)
+
+------------------------------------------------------------
+-- 🎛️ Rayfield UI
+------------------------------------------------------------
+local Window = Rayfield:CreateWindow({
+	Name = "⚡ Combat + ESP Menu",
+	LoadingTitle = "Loading Combat Tools",
+	LoadingSubtitle = "by cookie codes",
+	ConfigurationSaving = {Enabled = false}
+})
+
+-- ESP Tab
+local ESPTab = Window:CreateTab("👁️ ESP", 4483362458)
+
+ESPTab:CreateToggle({
+	Name = "Enable ESP (Chams + Names + Distance)",
+	CurrentValue = false,
+	Flag = "ESP_Toggle",
+	Callback = function(Value)
+		ESP.Enabled = Value
+	end,
+})
+
+-- Combat Tab
+local CombatTab = Window:CreateTab("⚔️ Combat", 4483362458)
+
+CombatTab:CreateToggle({
+	Name = "Aimlock (Auto-Aim Nearest Player)",
+	CurrentValue = false,
+	Flag = "Aimlock_Toggle",
+	Callback = function(Value)
+		Combat.Aimlock = Value
+	end,
+})
+
+CombatTab:CreateToggle({
+	Name = "Auto Attack Nearest Player",
+	CurrentValue = false,
+	Flag = "AutoAttack_Toggle",
+	Callback = function(Value)
+		Combat.AutoAttack = Value
+	end,
+})
+
+CombatTab:CreateParagraph({
+	Title = "⚠️ Auto Attack Info",
+	Content = "Automatically attacks the nearest player when in range. May need adjustment based on game mechanics."
+})
+
+-- Movement Tab
+local MovementTab = Window:CreateTab("🏃 Movement", 4483362458)
+
+MovementTab:CreateToggle({
+	Name = "Speed Boost",
+	CurrentValue = false,
+	Flag = "Speed_Toggle",
+	Callback = function(Value)
+		Movement.SpeedEnabled = Value
+	end,
+})
+
+MovementTab:CreateSlider({
+	Name = "Walk Speed",
+	Range = {16, 200},
+	Increment = 1,
+	CurrentValue = 16,
+	Flag = "WalkSpeed_Slider",
+	Callback = function(Value)
+		Movement.WalkSpeed = Value
+	end,
+})
+
+MovementTab:CreateToggle({
+	Name = "No Dash Cooldown",
+	CurrentValue = false,
+	Flag = "NoDash_Toggle",
+	Callback = function(Value)
+		Movement.NoDashCooldown = Value
+	end,
+})
+
+MovementTab:CreateParagraph({
+	Title = "Fly Controls",
+	Content = "Press [E] to toggle fly.\nUse WASD to move while flying."
+})
+
+-- Misc Tab
+local MiscTab = Window:CreateTab("🔧 Misc", 4483362458)
+
+MiscTab:CreateToggle({
+	Name = "Auto Respawn",
+	CurrentValue = false,
+	Flag = "AutoRespawn_Toggle",
+	Callback = function(Value)
+		Misc.AutoRespawn = Value
+	end,
+})
+
+MiscTab:CreateParagraph({
+	Title = "Teleport Controls",
+	Content = "Press [H] to teleport to the lowest health player."
+})
