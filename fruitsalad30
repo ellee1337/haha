@@ -204,32 +204,47 @@ end)
 -- 🔄 Teleport Magnet to Lowest Health Player [H] / Release [J]
 ------------------------------------------------------------
 local currentTarget = nil
+local magnetActive = false
 
--- Press H to select next lowest health player
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
     if key:lower() == "h" then
-        local lowestHealth = math.huge
-        local nextTarget = nil
-        local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not localHRP then return end
+        if magnetActive then
+            -- Stop magnet
+            currentTarget = nil
+            magnetActive = false
+        else
+            -- Find lowest health player
+            local lowestHealth = math.huge
+            local nextTarget = nil
+            local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not localHRP then return end
 
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local hum = player.Character:FindFirstChildOfClass("Humanoid")
-                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                if hum and hrp and hum.Health > 0 then
-                    if player ~= currentTarget and hum.Health < lowestHealth then
-                        lowestHealth = hum.Health
-                        nextTarget = player
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character then
+                    local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                    if hum and hrp and hum.Health > 0 then
+                        if hum.Health < lowestHealth then
+                            lowestHealth = hum.Health
+                            nextTarget = player
+                        end
                     end
                 end
             end
-        end
 
-        currentTarget = nextTarget
-    elseif key:lower() == "j" then
-        -- Press J to stop following
-        currentTarget = nil
+            currentTarget = nextTarget
+            magnetActive = true
+        end
+    end
+end)
+
+-- Follow target if magnet is active
+RunService.Heartbeat:Connect(function()
+    if magnetActive and currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = currentTarget.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+        end
     end
 end)
 
