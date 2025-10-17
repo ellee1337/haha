@@ -201,13 +201,13 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ------------------------------------------------------------
--- 🔄 Teleport Magnet (MiscTab Toggle + J Switch)
+-- 🔄 Teleport Magnet (MiscTab Toggle + J Switch to another player)
 ------------------------------------------------------------
 local currentTarget = nil
 local magnetActive = false
 
 -- Function to find the lowest health alive player
-local function getLowestHealthPlayer(exclude)
+local function getLowestHealthPlayer()
     local lowestHealth = math.huge
     local target = nil
     local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -217,7 +217,7 @@ local function getLowestHealthPlayer(exclude)
         if player ~= LocalPlayer and player.Character then
             local hum = player.Character:FindFirstChildOfClass("Humanoid")
             local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-            if hum and hrp and hum.Health > 0 and player ~= exclude then
+            if hum and hrp and hum.Health > 0 then
                 if hum.Health < lowestHealth then
                     lowestHealth = hum.Health
                     target = player
@@ -228,10 +228,27 @@ local function getLowestHealthPlayer(exclude)
     return target
 end
 
--- Key J to switch to next lowest health player
+-- Function to get another random alive player (excluding current)
+local function getAnotherPlayer()
+    local alivePlayers = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChildOfClass("Humanoid") 
+           and player.Character:FindFirstChildOfClass("Humanoid").Health > 0
+           and player ~= currentTarget then
+            table.insert(alivePlayers, player)
+        end
+    end
+    if #alivePlayers > 0 then
+        return alivePlayers[math.random(1, #alivePlayers)]
+    else
+        return nil
+    end
+end
+
+-- Key J to teleport to another player
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
     if key:lower() == "j" and magnetActive then
-        currentTarget = getLowestHealthPlayer(currentTarget)
+        currentTarget = getAnotherPlayer()
     end
 end)
 
@@ -241,7 +258,7 @@ RunService.Heartbeat:Connect(function()
         -- Auto switch if current target is dead or removed
         if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart")
             or currentTarget.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
-            currentTarget = getLowestHealthPlayer(currentTarget)
+            currentTarget = getLowestHealthPlayer()
             if not currentTarget then
                 magnetActive = false -- no alive players left
                 return
@@ -439,7 +456,7 @@ MiscTab:CreateToggle({
     Callback = function(Value)
         magnetActive = Value
         if Value then
-            currentTarget = getLowestHealthPlayer(nil)
+            currentTarget = getLowestHealthPlayer()
         else
             currentTarget = nil
         end
