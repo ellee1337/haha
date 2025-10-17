@@ -274,25 +274,28 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ------------------------------------------------------------
--- ⚔️ Auto Farm Level (Auto Skill Spam + Left Click)
+-- ⚔️ Auto Farm Level (Auto Skill Spam + Left Click | 0.05s Sync)
 ------------------------------------------------------------
 local AutoFarm = {Enabled = false}
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Function to press key + left click
 local function useSkillKeyFarm(key)
+    -- Press key
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
-    task.wait(0.5)
+    task.wait(0.05)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
-    task.wait(0.5)
+    
+    -- Left click
+    task.wait(0.05)
     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-    task.wait(0.5)
+    task.wait(0.05)
     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
 end
 
 -- Auto loop for skilling + clicking
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.05) do
         if AutoFarm.Enabled then
             useSkillKeyFarm("One")
             task.wait(0.05)
