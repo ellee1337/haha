@@ -274,7 +274,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ------------------------------------------------------------
--- 🔥 Auto Skills (Combat Tab)
+-- 🔥 Auto Skills (Combat Tab) with Left Click
 ------------------------------------------------------------
 local AutoSkills = {
     Skill1 = false, -- key "1"
@@ -284,26 +284,23 @@ local AutoSkills = {
     Skill5 = false  -- key "G"
 }
 
--- Function to simulate key press for skills
-local function pressKey(key)
-    local event = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
-            if input.KeyCode == Enum.KeyCode[key] then
-                -- Replace with actual skill trigger if needed
-            end
-        end
-    end)
-    task.delay(0.05, function() event:Disconnect() end)
+-- Function to simulate key press + left click
+local function useSkill(key)
+    -- Fire key event
+    local UserInputService = game:GetService("UserInputService")
+    UserInputService.InputBegan:Fire({KeyCode = Enum.KeyCode[key], UserInputType = Enum.UserInputType.Keyboard})
+    -- Fire left mouse click
+    mouse1click()
 end
 
 -- Auto trigger skills while magnet active
 RunService.Heartbeat:Connect(function()
     if magnetActive then
-        if AutoSkills.Skill1 then pressKey("One") end
-        if AutoSkills.Skill2 then pressKey("Two") end
-        if AutoSkills.Skill3 then pressKey("Three") end
-        if AutoSkills.Skill4 then pressKey("Four") end
-        if AutoSkills.Skill5 then pressKey("G") end
+        if AutoSkills.Skill1 then useSkill("One") end
+        if AutoSkills.Skill2 then useSkill("Two") end
+        if AutoSkills.Skill3 then useSkill("Three") end
+        if AutoSkills.Skill4 then useSkill("Four") end
+        if AutoSkills.Skill5 then useSkill("G") end
     end
 end)
 
@@ -438,10 +435,6 @@ CombatTab:CreateToggle({
         Combat.AutoAttack = Value
     end,
 })
-CombatTab:CreateParagraph({
-    Title = "⚠️ Auto Attack Info",
-    Content = "Automatically attacks the nearest player when in range. May need adjustment based on game mechanics."
-})
 CombatTab:CreateToggle({
     Name = "Auto Skill 1",
     CurrentValue = false,
@@ -450,6 +443,7 @@ CombatTab:CreateToggle({
         AutoSkills.Skill1 = Value
     end,
 })
+
 CombatTab:CreateToggle({
     Name = "Auto Skill 2",
     CurrentValue = false,
@@ -458,6 +452,7 @@ CombatTab:CreateToggle({
         AutoSkills.Skill2 = Value
     end,
 })
+
 CombatTab:CreateToggle({
     Name = "Auto Skill 3",
     CurrentValue = false,
@@ -466,6 +461,7 @@ CombatTab:CreateToggle({
         AutoSkills.Skill3 = Value
     end,
 })
+
 CombatTab:CreateToggle({
     Name = "Auto Skill 4",
     CurrentValue = false,
@@ -474,6 +470,7 @@ CombatTab:CreateToggle({
         AutoSkills.Skill4 = Value
     end,
 })
+
 CombatTab:CreateToggle({
     Name = "Auto Skill 5 (G)",
     CurrentValue = false,
