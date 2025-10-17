@@ -1,6 +1,6 @@
 -- 🌀 Fly + Chams ESP with Rayfield UI
 -- ✅ Simple + Stable Version
--- ⚠️ Press [E] to toggle Fly
+-- ⚠️ Press [E] to toggle Fly, [H] to teleport to next alive player
 
 -- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -83,7 +83,8 @@ LocalPlayer:GetMouse().KeyUp:Connect(function(key)
 	if key:lower() == "w" then ctrl.f = 0
 	elseif key:lower() == "s" then ctrl.b = 0
 	elseif key:lower() == "a" then ctrl.l = 0
-	elseif key:lower() == "d" then ctrl.r = 0 end
+	elseif key:lower() == "d" then ctrl.r = 0
+	end
 end)
 
 ------------------------------------------------------------
@@ -157,21 +158,21 @@ local function updateBillboards()
    				billboard = Instance.new("BillboardGui")
     			billboard.Size = UDim2.new(0, 50, 0, 15) -- smaller size
     			billboard.Adornee = hrp
-    		billboard.AlwaysOnTop = true
-    		billboard.Parent = game.CoreGui
+    			billboard.AlwaysOnTop = true
+    			billboard.Parent = game.CoreGui
 
-    		local text = Instance.new("TextLabel", billboard)
-    		text.Size = UDim2.new(1, 0, 1, 0)
-    		text.BackgroundTransparency = 1
-    		text.TextColor3 = Color3.fromRGB(255, 0, 0)
-    		text.TextStrokeTransparency = 0.1
-		    text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    		text.Font = Enum.Font.GothamBold
-    		text.TextScaled = true
-    		text.Name = "NameLabel"
+    			local text = Instance.new("TextLabel", billboard)
+    			text.Size = UDim2.new(1, 0, 1, 0)
+    			text.BackgroundTransparency = 1
+    			text.TextColor3 = Color3.fromRGB(255, 0, 0)
+    			text.TextStrokeTransparency = 0.1
+		    	text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    			text.Font = Enum.Font.GothamBold
+    			text.TextScaled = true
+    			text.Name = "NameLabel"
 
-    		BillboardCache[player] = billboard
-		end
+    			BillboardCache[player] = billboard
+			end
 				billboard.Enabled = true
 				billboard.NameLabel.Text = string.format("%s [%dm]", player.Name, math.floor(distance))
 			else
@@ -185,32 +186,47 @@ end
 RunService.RenderStepped:Connect(updateBillboards)
 
 ------------------------------------------------------------
--- 🔄 Teleport to Lowest Health Player on [H]
+-- 🔄 Fly-Safe Teleport Cycling on [H]
 ------------------------------------------------------------
+local teleportIndex = 0
+
+local function getValidPlayers()
+    local list = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hum = player.Character:FindFirstChildOfClass("Humanoid")
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if hum and hrp and hum.Health > 0 then
+                table.insert(list, player)
+            end
+        end
+    end
+    return list
+end
+
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
-	if key:lower() == "h" then
-		local lowestHealth = math.huge
-		local targetPlayer = nil
-		local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-		if not localHRP then return end
+    if key:lower() == "h" then
+        local validPlayers = getValidPlayers()
+        if #validPlayers == 0 then return end
 
-		for _, player in pairs(Players:GetPlayers()) do
-			if player ~= LocalPlayer and player.Character then
-				local hum = player.Character:FindFirstChildOfClass("Humanoid")
-				local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-				if hum and hrp and hum.Health > 0 then
-					if hum.Health < lowestHealth then
-						lowestHealth = hum.Health
-						targetPlayer = player
-					end
-				end
-			end
-		end
+        teleportIndex = teleportIndex + 1
+        if teleportIndex > #validPlayers then
+            teleportIndex = 1
+        end
 
-		if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-			LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
-		end
-	end
+        local target = validPlayers[teleportIndex]
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local char = LocalPlayer.Character
+            local localHRP = char and char:FindFirstChild("HumanoidRootPart")
+            local targetHRP = target.Character.HumanoidRootPart
+            if localHRP then
+                if flying and bv and bg then
+                    bv.Velocity = Vector3.new(0,0,0)
+                end
+                localHRP.CFrame = targetHRP.CFrame + Vector3.new(0,5,0)
+            end
+        end
+    end
 end)
 
 ------------------------------------------------------------
@@ -234,4 +250,4 @@ Tab:CreateToggle({
 	end,
 })
 
-Tab:CreateParagraph({Title = "Fly Controls", Content = "Press [E] to toggle fly.\nUse WASD to move while flying."})
+Tab:CreateParagraph({Title = "Fly Controls", Content = "Press [E] to toggle fly.\nUse WASD to move while flying.\nPress [H] to teleport to the next alive player."})
