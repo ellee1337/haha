@@ -315,6 +315,7 @@ end)
 -- ⚔️ Auto Skill PvP (Skill Only - 0.5s Delay)
 ------------------------------------------------------------
 local AutoSkillPVP = {Enabled = false}
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Function to press key only
 local function useSkillKeyPVP(key)
@@ -325,16 +326,16 @@ end
 
 -- Auto loop for skill-only PvP
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0.3) do
         if AutoSkillPVP.Enabled then
             useSkillKeyPVP("One")
-            task.wait(0.5)
+            task.wait(0.2)
             useSkillKeyPVP("Two")
-            task.wait(0.5)
+            task.wait(0.2)
             useSkillKeyPVP("Three")
-            task.wait(0.5)
+            task.wait(0.2)
             useSkillKeyPVP("Four")
-            task.wait(0.5)
+            task.wait(0.2)
             useSkillKeyPVP("G")
         end
     end
