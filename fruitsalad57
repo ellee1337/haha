@@ -155,7 +155,7 @@ RunService.Heartbeat:Connect(function()
                 local distance = (target.Character.HumanoidRootPart.Position - localChar.HumanoidRootPart.Position).Magnitude
 
                 -- Attack instantly and continuously if close
-                if distance < 10 then
+                if distance < 15 then
                     mouse1click()
                 end
             end
