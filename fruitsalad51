@@ -303,21 +303,20 @@ end)
 -- ⚔️ Auto Skill PVP (Auto Skill PVP)
 ------------------------------------------------------------
 local AutoPvp = {Enabled = false}
-
--- Function to press key + left click
 local function useSkillKeyPvp(key)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
-    task.wait(0.09)
+    task.wait(0.5)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
-    task.wait(0.09)
+    task.wait(0.5)
+    -- ⚡ Instant left click (super fast)
     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-    task.wait(0.09)
+    task.wait(0)
     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
 end
 
--- Auto loop for skilling + clicking
+-- Auto loop for skilling + fast clicking
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.5) do
         if AutoPvp.Enabled then
             useSkillKeyPvp("One")
             task.wait(1.5)
