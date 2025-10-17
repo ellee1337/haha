@@ -314,20 +314,20 @@ end
 
 -- Auto loop for skilling
 task.spawn(function()
-    while task.wait(1.0) do
+    while task.wait(0.8) do
         if AutoPvp.Enabled then
             useSkillKeyPvp("One")
-            task.wait(1.3)
+            task.wait(0.8)
             useSkillKeyPvp("Two")
-            task.wait(1.3)
+            task.wait(0.8)
             useSkillKeyPvp("Three")
-            task.wait(1.3)
+            task.wait(0.8)
             useSkillKeyPvp("Four")
-            task.wait(1.3)
+            task.wait(0.8)
             useSkillKeyPvp("Five")
-            task.wait(1.3)
+            task.wait(0.8)
             useSkillKeyPvp("E")
-            task.wait(1.3)
+            task.wait(0.8)
             useSkillKeyPvp("G")
         end
     end
