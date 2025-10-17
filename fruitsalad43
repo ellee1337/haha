@@ -1,6 +1,3 @@
--- 🌀 Full Combat + ESP Script with Rayfield UI
--- ✅ Fly, ESP, Aimlock, Speed, Auto-Attack
--- ⚠️ Press [E] to toggle Fly
 
 -- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -439,16 +436,16 @@ RunService.RenderStepped:Connect(updateBillboards)
 -- 🎛️ Rayfield UI
 ------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
-    Name = "⚡ Combat + ESP Menu",
-    LoadingTitle = "Loading Combat Tools",
-    LoadingSubtitle = "by cookie codes",
+    Name = "⚡ Lynx Fruit Battlegrounds",
+    LoadingTitle = "Created Menu",
+    LoadingSubtitle = "By Elle",
     ConfigurationSaving = {Enabled = false}
 })
 
 -- ESP Tab
 local ESPTab = Window:CreateTab("👁️ ESP", 4483362458)
 ESPTab:CreateToggle({
-    Name = "Enable ESP (Chams + Names + Distance)",
+    Name = "Enable ESP",
     CurrentValue = false,
     Flag = "ESP_Toggle",
     Callback = function(Value)
@@ -543,5 +540,43 @@ MiscTab:CreateToggle({
     Callback = function(Value)
         Invisible.Enabled = Value
         setInvisibility(Value)
+    end,
+})
+
+------------------------------------------------------------
+-- 🧹 Destroy UI Button
+------------------------------------------------------------
+
+MiscTab:CreateButton({
+    Name = "🗑️ Destroy UI & Stop Script",
+    Callback = function()
+        -- Destroy Rayfield
+        if Rayfield and Rayfield.Destroy then
+            Rayfield:Destroy()
+        end
+        
+        -- Clean up CoreGui ESP objects
+        for _, obj in pairs(game.CoreGui:GetChildren()) do
+            if obj:IsA("BillboardGui") or obj:IsA("Highlight") then
+                obj:Destroy()
+            end
+        end
+
+        -- Reset toggles
+        ESP.Enabled = false
+        Combat.Aimlock = false
+        Combat.AutoAttack = false
+        AutoFarm.Enabled = false
+        Movement.SpeedEnabled = false
+        Movement.NoDashCooldown = false
+        Invisible.Enabled = false
+        magnetActive = false
+
+        -- Notify user
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "⚡ Lynx Fruit Battlegrounds",
+            Text = "All UI and scripts have been destroyed.",
+            Duration = 4
+        })
     end,
 })
