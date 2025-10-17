@@ -371,42 +371,50 @@ end)
 
 
 ------------------------------------------------------------
--- 💪 Anti Ragdoll System
+-- 💪 Global Anti Ragdoll System
 ------------------------------------------------------------
 local AntiRagdoll = {Enabled = false}
 
--- Function to disable ragdoll constraints (e.g., BallSocket, Hinge, etc.)
-local function disableRagdoll()
-    local char = LocalPlayer.Character
+-- Disable ragdoll constraints for any character
+local function disableRagdollForCharacter(char)
     if not char then return end
     for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BallSocketConstraint") or part:IsA("HingeConstraint") or part:IsA("SpringConstraint") then
-            part:Destroy()
-        elseif part:IsA("BodyVelocity") or part:IsA("BodyGyro") or part:IsA("VectorForce") then
+        if part:IsA("BallSocketConstraint")
+            or part:IsA("HingeConstraint")
+            or part:IsA("SpringConstraint")
+            or part:IsA("BodyVelocity")
+            or part:IsA("BodyGyro")
+            or part:IsA("VectorForce") then
             part:Destroy()
         end
+    end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.PlatformStand = false
     end
 end
 
--- Keep humanoid from getting ragdolled or flung
+-- Continuously protect all other players from ragdoll
 RunService.Heartbeat:Connect(function()
     if AntiRagdoll.Enabled then
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChildOfClass("Humanoid") then
-            char:FindFirstChildOfClass("Humanoid").PlatformStand = false
-            disableRagdoll()
+        for _, player in pairs(Players:GetPlayers()) do
+            -- Everyone EXCEPT you (LocalPlayer)
+            if player ~= LocalPlayer and player.Character then
+                disableRagdollForCharacter(player.Character)
+            end
         end
     end
 end)
 
--- Re-apply when respawning
-LocalPlayer.CharacterAdded:Connect(function(char)
-    if AntiRagdoll.Enabled then
-        task.wait(1)
-        disableRagdoll()
-    end
+-- Apply when other players respawn
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        if AntiRagdoll.Enabled then
+            task.wait(1)
+            disableRagdollForCharacter(player.Character)
+        end
+    end)
 end)
-
 
 ------------------------------------------------------------
 -- 👁️ ESP
@@ -617,14 +625,11 @@ MiscTab:CreateSlider({
 })
 -- UI Toggle in MiscTab
 MiscTab:CreateToggle({
-    Name = "Anti Ragdoll (No Knockback / No Fall)",
+    Name = "Anti Ragdoll (Others Only)",
     CurrentValue = false,
     Flag = "AntiRagdoll_Toggle",
     Callback = function(Value)
         AntiRagdoll.Enabled = Value
-        if Value then
-            disableRagdoll()
-        end
     end,
 })
 MiscTab:CreateToggle({
