@@ -1,4 +1,4 @@
--- Combat Admin UI using Rayfield Library
+-- Combat Admin UI using Rayfield Library (Fixed Attack Function)
 -- Works with the provided combat server script
 -- Place this LocalScript in StarterPlayerScripts
 
@@ -115,14 +115,14 @@ Tab:CreateToggle({
 })
 
 --------------------------------------------------------------
--- ⚔️ Weapons Tab
+-- ⚔️ Weapons Tab (Fixed Attack Logic)
 --------------------------------------------------------------
 local WeaponTab = Window:CreateTab("Weapons", 4483362458)
 
 local weapons = {
-    {name = "Sword", index = 1},
-    {name = "Bow", index = 2},
-    {name = "Staff", index = 3}
+    {name = "Sword", index = 1, damage = 15},
+    {name = "Bow", index = 2, damage = 10},
+    {name = "Staff", index = 3, damage = 25}
 }
 
 for _, weapon in ipairs(weapons) do
@@ -130,19 +130,25 @@ for _, weapon in ipairs(weapons) do
         Name = "Attack with " .. weapon.name,
         Callback = function()
             local myChar = player.Character
-            if not myChar or not myChar.PrimaryPart then return end
+            local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
+            if not myChar or not myRoot then
+                Rayfield:Notify({Title = "Combat", Content = "Character not found", Duration = 2})
+                return
+            end
+
             local closest, dist = nil, 9999
             for _, pl in ipairs(Players:GetPlayers()) do
-                if pl ~= player and pl.Character and pl.Character.PrimaryPart then
-                    local d = (myChar.PrimaryPart.Position - pl.Character.PrimaryPart.Position).Magnitude
+                if pl ~= player and pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then
+                    local d = (myRoot.Position - pl.Character.HumanoidRootPart.Position).Magnitude
                     if d < dist then
                         dist = d
                         closest = pl
                     end
                 end
             end
+
             if closest then
-                damageEvent:FireServer(closest, nil, weapon.index)
+                damageEvent:FireServer(closest, weapon.damage, weapon.index)
                 Rayfield:Notify({Title = "Combat", Content = "Attacked " .. closest.Name .. " with " .. weapon.name, Duration = 2})
             else
                 Rayfield:Notify({Title = "Combat", Content = "No target found nearby", Duration = 2})
@@ -174,3 +180,18 @@ if remotes:FindFirstChild("DamageEffect") then
         Rayfield:Notify({Title = "Hit!", Content = "Damage: " .. tostring(amount), Duration = 1.5})
     end)
 end
+
+--------------------------------------------------------------
+-- ⌨️ UI Toggle Keybind (RightShift)
+--------------------------------------------------------------
+Rayfield:LoadConfiguration()
+
+Rayfield:CreateKeybind({
+    Name = "Toggle UI",
+    CurrentKeybind = "RightShift",
+    HoldToInteract = false,
+    Flag = "ToggleUI",
+    Callback = function()
+        Rayfield:Toggle()
+    end,
+})
