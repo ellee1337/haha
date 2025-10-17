@@ -185,35 +185,32 @@ end
 RunService.RenderStepped:Connect(updateBillboards)
 
 ------------------------------------------------------------
--- 🧠 teleport
+-- 🔄 Teleport to Lowest Health Player on [H]
 ------------------------------------------------------------
-
-local function getNearestPlayer()
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-    local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localHRP then return nil end
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = player.Character.HumanoidRootPart
-            local distance = (hrp.Position - localHRP.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestPlayer = player
-            end
-        end
-    end
-    return nearestPlayer
-end
-
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
-    if key:lower() == "h" then
-        local target = getNearestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
-        end
-    end
+	if key:lower() == "h" then
+		local lowestHealth = math.huge
+		local targetPlayer = nil
+		local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if not localHRP then return end
+
+		for _, player in pairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and player.Character then
+				local hum = player.Character:FindFirstChildOfClass("Humanoid")
+				local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+				if hum and hrp and hum.Health > 0 then
+					if hum.Health < lowestHealth then
+						lowestHealth = hum.Health
+						targetPlayer = player
+					end
+				end
+			end
+		end
+
+		if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+		end
+	end
 end)
 
 ------------------------------------------------------------
