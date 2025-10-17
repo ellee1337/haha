@@ -201,7 +201,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ------------------------------------------------------------
--- 🔄 Teleport Magnet to Lowest Health Player [H] / Release [J]
+-- 🔄 Teleport Magnet (MiscTab Toggle + J Switch)
 ------------------------------------------------------------
 local currentTarget = nil
 local magnetActive = false
@@ -228,20 +228,10 @@ local function getLowestHealthPlayer(exclude)
     return target
 end
 
--- Press H to toggle magnet
+-- Key J to switch to next lowest health player
 LocalPlayer:GetMouse().KeyDown:Connect(function(key)
-    if key:lower() == "h" then
-        if magnetActive then
-            -- Stop magnet
-            currentTarget = nil
-            magnetActive = false
-        else
-            -- Start magnet
-            currentTarget = getLowestHealthPlayer(nil)
-            if currentTarget then
-                magnetActive = true
-            end
-        end
+    if key:lower() == "j" and magnetActive then
+        currentTarget = getLowestHealthPlayer(currentTarget)
     end
 end)
 
@@ -249,7 +239,7 @@ end)
 RunService.Heartbeat:Connect(function()
     if magnetActive then
         -- Auto switch if current target is dead or removed
-        if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") 
+        if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart")
             or currentTarget.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
             currentTarget = getLowestHealthPlayer(currentTarget)
             if not currentTarget then
@@ -440,4 +430,18 @@ local MiscTab = Window:CreateTab("🔧 Misc", 4483362458)
 MiscTab:CreateParagraph({
     Title = "Teleport Controls",
     Content = "Press [H] to teleport to the lowest health player."
+})
+
+MiscTab:CreateToggle({
+    Name = "Magnet Teleport to Lowest Health Player",
+    CurrentValue = false,
+    Flag = "MagnetToggle",
+    Callback = function(Value)
+        magnetActive = Value
+        if Value then
+            currentTarget = getLowestHealthPlayer(nil)
+        else
+            currentTarget = nil
+        end
+    end,
 })
