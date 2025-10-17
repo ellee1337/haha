@@ -1,0 +1,262 @@
+-- ✅ ESP + FLY + RAYFIELD UI (FIXED)
+
+--// Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local plr = Players.LocalPlayer
+local cam = workspace.CurrentCamera
+
+--// Load Rayfield
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+----------------------------------------------------
+-- ⚙️ ESP SYSTEM
+----------------------------------------------------
+local ESP = {
+    Enabled = false,
+    Boxes = true,
+    Names = true,
+    Color = Color3.fromRGB(255, 170, 0),
+    Thickness = 2,
+    BoxShift = CFrame.new(0,-1.5,0),
+    BoxSize = Vector3.new(4,6,0),
+    Objects = setmetatable({}, {__mode="kv"})
+}
+
+--// Drawing Helper
+local function Draw(obj, props)
+    local new = Drawing.new(obj)
+    for i,v in pairs(props or {}) do
+        new[i] = v
+    end
+    return new
+end
+
+--// ESP Object
+local boxBase = {}
+boxBase.__index = boxBase
+
+function boxBase:Remove()
+    if self.Components then
+        for _,v in pairs(self.Components) do
+            pcall(function() v.Visible = false v:Remove() end)
+        end
+    end
+    ESP.Objects[self.Object] = nil
+end
+
+function boxBase:Update()
+    local hrp = self.PrimaryPart
+    if not ESP.Enabled or not hrp or not hrp.Parent then
+        for _,v in pairs(self.Components) do v.Visible = false end
+        return
+    end
+
+    local Camera = workspace.CurrentCamera
+    local cf = hrp.CFrame
+    local size = self.Size or ESP.BoxSize
+    local cf2 = cf * (ESP.BoxShift or CFrame.new())
+    local tl_world = (cf2 * CFrame.new(size.X/2, size.Y/2, 0)).p
+    local tr_world = (cf2 * CFrame.new(-size.X/2, size.Y/2, 0)).p
+    local bl_world = (cf2 * CFrame.new(size.X/2, -size.Y/2, 0)).p
+    local br_world = (cf2 * CFrame.new(-size.X/2, -size.Y/2, 0)).p
+    local tag_world = (cf2 * CFrame.new(0, size.Y/2, 0)).p
+
+    local tl_proj = Camera:WorldToViewportPoint(tl_world)
+    local tr_proj = Camera:WorldToViewportPoint(tr_world)
+    local bl_proj = Camera:WorldToViewportPoint(bl_world)
+    local br_proj = Camera:WorldToViewportPoint(br_world)
+    local tag_proj = Camera:WorldToViewportPoint(tag_world)
+
+    local visibleCorners = (tl_proj.Z > 0 or tr_proj.Z > 0 or bl_proj.Z > 0 or br_proj.Z > 0)
+
+    if visibleCorners then
+        if ESP.Boxes then
+            local quad = self.Components.Quad
+            quad.PointA = Vector2.new(tr_proj.X, tr_proj.Y)
+            quad.PointB = Vector2.new(tl_proj.X, tl_proj.Y)
+            quad.PointC = Vector2.new(bl_proj.X, bl_proj.Y)
+            quad.PointD = Vector2.new(br_proj.X, br_proj.Y)
+            quad.Color = ESP.Color
+            quad.Visible = true
+        else
+            self.Components.Quad.Visible = false
+        end
+
+        if ESP.Names then
+            local name = self.Components.Name
+            name.Position = Vector2.new(tag_proj.X, tag_proj.Y)
+            name.Text = self.Name
+            name.Color = ESP.Color
+            name.Visible = true
+        else
+            self.Components.Name.Visible = false
+        end
+    else
+        for _,v in pairs(self.Components) do v.Visible = false end
+    end
+end
+
+function ESP:Add(obj, options)
+    local box = setmetatable({
+        Name = options.Name or obj.Name,
+        Object = obj,
+        Player = options.Player or Players:GetPlayerFromCharacter(obj),
+        PrimaryPart = options.PrimaryPart or obj:FindFirstChild("HumanoidRootPart"),
+        Components = {}
+    }, boxBase)
+
+    box.Components["Quad"] = Draw("Quad", {
+        Thickness = ESP.Thickness,
+        Color = ESP.Color,
+        Filled = false,
+        Visible = false
+    })
+
+    box.Components["Name"] = Draw("Text", {
+        Text = box.Name,
+        Size = 18,
+        Center = true,
+        Outline = true,
+        Color = ESP.Color,
+        Visible = false
+    })
+
+    ESP.Objects[obj] = box
+    return box
+end
+
+--// Player character connection
+local function CharAdded(char)
+    local p = Players:GetPlayerFromCharacter(char)
+    if p and p ~= plr then
+        local hrp = char:WaitForChild("HumanoidRootPart", 10)
+        if hrp then
+            ESP:Add(char, {Name = p.Name, Player = p, PrimaryPart = hrp})
+        end
+    end
+end
+
+for _,p in pairs(Players:GetPlayers()) do
+    if p ~= plr and p.Character then CharAdded(p.Character) end
+    p.CharacterAdded:Connect(CharAdded)
+end
+
+RunService.RenderStepped:Connect(function()
+    for _,v in pairs(ESP.Objects) do
+        if v then v:Update() end
+    end
+end)
+
+----------------------------------------------------
+-- 🕊️ FLY SYSTEM
+----------------------------------------------------
+local flying = false
+local speed = 5
+local bodyGyro, bodyVel
+
+local function startFly()
+    local char = plr.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+
+    bodyGyro = Instance.new("BodyGyro", hrp)
+    bodyGyro.P = 9e4
+    bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.cframe = hrp.CFrame
+
+    bodyVel = Instance.new("BodyVelocity", hrp)
+    bodyVel.velocity = Vector3.zero
+    bodyVel.maxForce = Vector3.new(9e9, 9e9, 9e9)
+
+    flying = true
+
+    RunService.RenderStepped:Connect(function()
+        if flying then
+            bodyGyro.cframe = workspace.CurrentCamera.CFrame
+            local moveDir = Vector3.zero
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveDir = moveDir + workspace.CurrentCamera.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveDir = moveDir - workspace.CurrentCamera.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveDir = moveDir - workspace.CurrentCamera.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveDir = moveDir + workspace.CurrentCamera.CFrame.RightVector
+            end
+            bodyVel.velocity = moveDir * speed
+        end
+    end)
+end
+
+local function stopFly()
+    flying = false
+    if bodyGyro then bodyGyro:Destroy() end
+    if bodyVel then bodyVel:Destroy() end
+end
+
+----------------------------------------------------
+-- 🪟 UI SETUP
+----------------------------------------------------
+local Window = Rayfield:CreateWindow({
+    Name = "ESP + Fly Menu",
+    LoadingTitle = "Rayfield UI",
+    LoadingSubtitle = "ESP Controller",
+    ConfigurationSaving = {Enabled = false},
+})
+
+local Tab = Window:CreateTab("Main")
+
+Tab:CreateToggle({
+    Name = "ESP Enabled",
+    CurrentValue = false,
+    Callback = function(v)
+        ESP.Enabled = v
+    end
+})
+
+Tab:CreateToggle({
+    Name = "ESP Boxes",
+    CurrentValue = true,
+    Callback = function(v)
+        ESP.Boxes = v
+    end
+})
+
+Tab:CreateToggle({
+    Name = "ESP Names",
+    CurrentValue = true,
+    Callback = function(v)
+        ESP.Names = v
+    end
+})
+
+Tab:CreateToggle({
+    Name = "Fly",
+    CurrentValue = false,
+    Callback = function(v)
+        if v then
+            startFly()
+        else
+            stopFly()
+        end
+    end
+})
+
+Tab:CreateSlider({
+    Name = "Fly Speed",
+    Range = {1, 50},
+    Increment = 1,
+    CurrentValue = 5,
+    Callback = function(value)
+        speed = value
+    end
+})
+
+----------------------------------------------------
+-- ✅ END OF SCRIPT
+----------------------------------------------------
