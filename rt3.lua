@@ -1,5 +1,5 @@
--- 🍽️ Full Auto Restaurant Script + Rayfield UI
--- Made by cookie codes (Fixed & Working Version)
+-- 🍽️ Stable Auto Restaurant Script + Rayfield UI
+-- Made by cookie codes (Simplified Version)
 
 -- ⚙️ Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
@@ -8,16 +8,12 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local taskEvent = replicatedStorage:WaitForChild("Events"):WaitForChild("Restaurant"):WaitForChild("TaskCompleted")
-local cookEvent = replicatedStorage:WaitForChild("Events"):WaitForChild("Cook"):WaitForChild("CookInputRequested")
 
 -- ⚙️ Settings
 getgenv().Settings = {
     AutoCustomer = false,
     PickupCash = false,
     PickupDishes = false,
-    InstantCook = false,
-    AutoPrepare = false,
-    AutoServeFood = false,
     AntiAFK = true
 }
 
@@ -107,67 +103,6 @@ local function collectDishes(tycoon)
 end
 
 ------------------------------------------------------------
--- 🔥 Instant Cook (Fixed)
-------------------------------------------------------------
-local function instantCook()
-    while task.wait(1) and getgenv().Settings.InstantCook do
-        local tycoon = getTycoon()
-        if not tycoon then continue end
-        local oven = tycoon.Items:FindFirstChild("Oven")
-        if oven then
-            cookEvent:FireServer("Interact", oven)
-        end
-    end
-end
-
-------------------------------------------------------------
--- 🍔 Auto Prepare Food (Fixed)
-------------------------------------------------------------
-local function autoPrepare()
-    while task.wait(1) and getgenv().Settings.AutoPrepare do
-        local tycoon = getTycoon()
-        if not tycoon then continue end
-        for _, item in pairs(tycoon.Items:GetDescendants()) do
-            if item:IsA("Model") and item.Name:lower():find("orderstand") then
-                local target = item:FindFirstChild("Base") or item.PrimaryPart or item
-                ActionRemote("PrepareFood", target, tycoon)
-                task.wait(0.2)
-            end
-        end
-    end
-end
-
-------------------------------------------------------------
--- 🍟 Auto Give Food to Customer (Teleport + Deliver)
-------------------------------------------------------------
-local function autoServeFood()
-    while task.wait(1) and getgenv().Settings.AutoServeFood do
-        local tycoon = getTycoon()
-        if not tycoon then continue end
-
-        for _, counter in pairs(tycoon.Items:GetDescendants()) do
-            if counter:IsA("Model") and (counter.Name:lower():find("foodcounter") or counter.Name:lower():find("tray")) then
-                local food = counter:FindFirstChildWhichIsA("Model")
-                if food and food.PrimaryPart then
-                    for _, ui in pairs(player.PlayerGui:GetChildren()) do
-                        if ui.Name == "CustomerSpeechUI" and ui.Adornee then
-                            local customerModel = ui.Adornee:FindFirstAncestorOfClass("Model")
-                            if customerModel and customerModel:FindFirstChild("HumanoidRootPart") then
-                                -- Teleport food above customer
-                                food:SetPrimaryPartCFrame(customerModel.HumanoidRootPart.CFrame + Vector3.new(0,3,0))
-                                task.wait(0.2)
-                                -- Notify server
-                                ActionRemote("DeliverFood", counter, tycoon)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-------------------------------------------------------------
 -- 💤 Anti AFK System
 ------------------------------------------------------------
 local function antiAFK()
@@ -186,7 +121,7 @@ end
 -- 🎛️ Rayfield UI Setup
 ------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
-    Name = "🍽️ Auto Restaurant System",
+    Name = "🍽️ Stable Auto Restaurant",
     LoadingTitle = "Loading Automation Hub",
     LoadingSubtitle = "by cookie codes",
     ConfigurationSaving = {
@@ -222,42 +157,6 @@ MainTab:CreateToggle({
     Flag = "PickupDishes",
     Callback = function(Value)
         getgenv().Settings.PickupDishes = Value
-    end
-})
-
-MainTab:CreateToggle({
-    Name = "Instant Cook",
-    CurrentValue = getgenv().Settings.InstantCook,
-    Flag = "InstantCook",
-    Callback = function(Value)
-        getgenv().Settings.InstantCook = Value
-        if Value then
-            task.spawn(instantCook)
-        end
-    end
-})
-
-MainTab:CreateToggle({
-    Name = "Auto Prepare Food",
-    CurrentValue = getgenv().Settings.AutoPrepare,
-    Flag = "AutoPrepare",
-    Callback = function(Value)
-        getgenv().Settings.AutoPrepare = Value
-        if Value then
-            task.spawn(autoPrepare)
-        end
-    end
-})
-
-MainTab:CreateToggle({
-    Name = "Auto Give Food to Customer",
-    CurrentValue = getgenv().Settings.AutoServeFood,
-    Flag = "AutoServeFood",
-    Callback = function(Value)
-        getgenv().Settings.AutoServeFood = Value
-        if Value then
-            task.spawn(autoServeFood)
-        end
     end
 })
 
