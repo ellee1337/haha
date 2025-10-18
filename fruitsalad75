@@ -101,6 +101,93 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 ------------------------------------------------------------
+-- 🔥 Raycast Hitbox Integration (with toggle)
+------------------------------------------------------------
+local RaycastHook = {
+    Enabled = false,
+    OriginalNamecall = nil,
+}
+
+local mt = getrawmetatable(game)
+local setreadonly = setreadonly or make_writeable
+local setreadonly_true = setreadonly or make_readonly
+local oldNamecall = nil
+
+local function GetClosestPlayer()
+    local nearestPlayer = nil
+    local shortestDistance = math.huge
+    local localChar = LocalPlayer.Character
+    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return nil end
+
+    local localHRP = localChar.HumanoidRootPart
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local distance = (localHRP.Position - hrp.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearestPlayer = player
+            end
+        end
+    end
+    return nearestPlayer
+end
+
+local function EnableRaycastHook()
+    if RaycastHook.Enabled or not mt then return end
+    RaycastHook.Enabled = true
+
+    setreadonly(mt, false)
+    RaycastHook.OriginalNamecall = RaycastHook.OriginalNamecall or mt.__namecall
+
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+
+        if method == "Raycast" then
+            local result = RaycastHook.OriginalNamecall(self, ...)
+            local target = GetClosestPlayer()
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                return {
+                    Instance = target.Character.HumanoidRootPart,
+                    Position = target.Character.HumanoidRootPart.Position,
+                    Material = Enum.Material.Plastic
+                }
+            end
+            return result
+        end
+
+        return RaycastHook.OriginalNamecall(self, ...)
+    end)
+
+    setreadonly(mt, true)
+
+    pcall(function()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "🎯 Raycast Hitbox",
+            Text = "Enabled hitbox redirection!",
+            Duration = 3
+        })
+    end)
+end
+
+local function DisableRaycastHook()
+    if not RaycastHook.Enabled or not RaycastHook.OriginalNamecall or not mt then return end
+    setreadonly(mt, false)
+    mt.__namecall = RaycastHook.OriginalNamecall
+    setreadonly(mt, true)
+    RaycastHook.Enabled = false
+
+    pcall(function()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "🎯 Raycast Hitbox",
+            Text = "Disabled hitbox redirection.",
+            Duration = 3
+        })
+    end)
+end
+
+------------------------------------------------------------
 -- 🎯 Combat System
 ------------------------------------------------------------
 local function getNearestPlayer()
@@ -511,6 +598,18 @@ CombatTab:CreateToggle({
 CombatTab:CreateParagraph({
     Title = "Auto Attack",
     Content = "Press [H] to auto attack a player."
+})
+CombatTab:CreateToggle({
+    Name = "Raycast Hitbox (Auto Redirect Hits)",
+    CurrentValue = false,
+    Flag = "RaycastHook_Toggle",
+    Callback = function(Value)
+        if Value then
+            EnableRaycastHook()
+        else
+            DisableRaycastHook()
+        end
+    end,
 })
 
 
