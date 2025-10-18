@@ -581,7 +581,7 @@ CombatTab:CreateToggle({
 
 CombatTab:CreateSlider({
     Name = "Hitbox Size",
-    Range = {5, 30},
+    Range = {5, 50},
     Increment = 1,
     Suffix = " studs",
     CurrentValue = 10,
@@ -654,7 +654,7 @@ MiscTab:CreateToggle({
 
 MiscTab:CreateSlider({
     Name = "Magnet Distance",
-    Range = {1, 8},
+    Range = {1, 15},
     Increment = 0.5,
     Suffix = "studs",
     CurrentValue = 5,
