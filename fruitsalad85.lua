@@ -306,11 +306,11 @@ end)
 ------------------------------------------------------------
 -- ⚔️ Auto Farm Level (1 Skill = 1 Click | Fast Version)
 ------------------------------------------------------------
-local AutoFarm = {Enabled = false}
+local AutoPvp = {Enabled = false}
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Function: press skill key + click quickly
-local function useSkillWithClick(key)
+local function useSkillPvp(key)
     -- Press skill key
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
     task.wait(0.03)
@@ -327,21 +327,21 @@ end
 task.spawn(function()
     while task.wait(0.03) do
         if AutoFarm.Enabled then
-            useSkillWithClick("One")
+            useSkillPvp("One")
             task.wait(0.15)
-            useSkillWithClick("Two")
+            useSkillPvp("Two")
             task.wait(0.15)
-            useSkillWithClick("Three")
+            useSkillPvp("Three")
             task.wait(0.15)
-            useSkillWithClick("Four")
+            useSkillPvp("Four")
             task.wait(0.15)
-            useSkillWithClick("Five")
+            useSkillPvp("Five")
             task.wait(0.15)
             useSkillWithClick("E")
             task.wait(0.15)
-            useSkillWithClick("G")
+            useSkillPvp("G")
             task.wait(0.15)
-            useSkillWithClick("Six")
+            useSkillPvp("Six")
             task.wait(0.15)
         end
     end
