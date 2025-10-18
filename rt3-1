@@ -1,4 +1,4 @@
--- 🧠 Auto Restaurant Script + Rayfield UI
+-- 🍳 Auto Restaurant Script + Rayfield UI
 -- Made by cookie codes
 
 -- ⚙️ Load Rayfield UI
@@ -11,14 +11,15 @@ local taskEvent = replicatedStorage:WaitForChild("Events"):WaitForChild("Restaur
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- ⚙️ Settings
-local Settings = {
+getgenv().Settings = {
     AutoCustomer = false,
     PickupCash = false,
-    PickupDishes = false
+    PickupDishes = false,
+    InstantCook = false
 }
 
 ------------------------------------------------------------
--- ⚙️ Main Game Functions
+-- ⚙️ Core Functions
 ------------------------------------------------------------
 
 local function getTycoon()
@@ -97,13 +98,24 @@ local function collectDishes(tycoon)
     end
 end
 
+local function instantCook()
+    while task.wait() and getgenv().Settings.InstantCook do
+        for i = 1, 5 do
+            replicatedStorage:WaitForChild("Events")
+                :WaitForChild("Cook")
+                :WaitForChild("CookInputRequested")
+                :FireServer("Interact", workspace, "Oven")
+        end
+    end
+end
+
 ------------------------------------------------------------
 -- 🎛️ Rayfield UI Setup
 ------------------------------------------------------------
 
 local Window = Rayfield:CreateWindow({
-    Name = "🍽️ Auto Restaurant",
-    LoadingTitle = "Loading Auto System",
+    Name = "🍽️ Auto Restaurant System",
+    LoadingTitle = "Loading Automation Hub",
     LoadingSubtitle = "by cookie codes",
     ConfigurationSaving = {
         Enabled = true,
@@ -116,45 +128,57 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 
 MainTab:CreateToggle({
     Name = "Auto Serve Customers",
-    CurrentValue = Settings.AutoCustomer,
+    CurrentValue = getgenv().Settings.AutoCustomer,
     Flag = "AutoCustomer",
     Callback = function(Value)
-        Settings.AutoCustomer = Value
+        getgenv().Settings.AutoCustomer = Value
     end
 })
 
 MainTab:CreateToggle({
     Name = "Auto Collect Cash",
-    CurrentValue = Settings.PickupCash,
+    CurrentValue = getgenv().Settings.PickupCash,
     Flag = "PickupCash",
     Callback = function(Value)
-        Settings.PickupCash = Value
+        getgenv().Settings.PickupCash = Value
     end
 })
 
 MainTab:CreateToggle({
     Name = "Auto Collect Dishes",
-    CurrentValue = Settings.PickupDishes,
+    CurrentValue = getgenv().Settings.PickupDishes,
     Flag = "PickupDishes",
     Callback = function(Value)
-        Settings.PickupDishes = Value
+        getgenv().Settings.PickupDishes = Value
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Instant Cook (Fast Oven)",
+    CurrentValue = getgenv().Settings.InstantCook,
+    Flag = "InstantCook",
+    Callback = function(Value)
+        getgenv().Settings.InstantCook = Value
+        if Value then
+            task.spawn(instantCook)
+        end
     end
 })
 
 ------------------------------------------------------------
--- 🔁 Main Loop
+-- 🔁 Main Automation Loop
 ------------------------------------------------------------
 coroutine.wrap(function()
     while task.wait(1) do
         local tycoon = getTycoon()
         if tycoon then
-            if Settings.AutoCustomer then
+            if getgenv().Settings.AutoCustomer then
                 processCustomerRequests()
             end
-            if Settings.PickupCash then
+            if getgenv().Settings.PickupCash then
                 collectBills(tycoon)
             end
-            if Settings.PickupDishes then
+            if getgenv().Settings.PickupDishes then
                 collectDishes(tycoon)
             end
         else
