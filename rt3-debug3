@@ -1,5 +1,5 @@
 -- 🍽️ Full Auto Restaurant Script + Rayfield UI
--- Made by cookie codes (Fixed Version with Teleport Serve)
+-- Made by cookie codes (Fixed & Working Version)
 
 -- ⚙️ Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
@@ -107,12 +107,15 @@ local function collectDishes(tycoon)
 end
 
 ------------------------------------------------------------
--- 🔥 Instant Cook
+-- 🔥 Instant Cook (Fixed)
 ------------------------------------------------------------
 local function instantCook()
-    while task.wait() and getgenv().Settings.InstantCook do
-        for i = 1, 5 do
-            cookEvent:FireServer("Interact", workspace, "Oven")
+    while task.wait(1) and getgenv().Settings.InstantCook do
+        local tycoon = getTycoon()
+        if not tycoon then continue end
+        local oven = tycoon.Items:FindFirstChild("Oven")
+        if oven then
+            cookEvent:FireServer("Interact", oven)
         end
     end
 end
@@ -124,10 +127,10 @@ local function autoPrepare()
     while task.wait(1) and getgenv().Settings.AutoPrepare do
         local tycoon = getTycoon()
         if not tycoon then continue end
-
-        for _, item in pairs(tycoon.Items:GetChildren()) do
+        for _, item in pairs(tycoon.Items:GetDescendants()) do
             if item:IsA("Model") and item.Name:lower():find("orderstand") then
-                ActionRemote("PrepareFood", item, tycoon)
+                local target = item:FindFirstChild("Base") or item.PrimaryPart or item
+                ActionRemote("PrepareFood", target, tycoon)
                 task.wait(0.2)
             end
         end
@@ -135,26 +138,17 @@ local function autoPrepare()
 end
 
 ------------------------------------------------------------
--- 🍟 Auto Give Food to Customer (Teleport Method)
+-- 🍟 Auto Give Food to Customer (Teleport + Deliver)
 ------------------------------------------------------------
-local function autoServeFoodTeleport()
+local function autoServeFood()
     while task.wait(1) and getgenv().Settings.AutoServeFood do
         local tycoon = getTycoon()
         if not tycoon then continue end
 
-        for _, item in pairs(tycoon.Items:GetChildren()) do
-            if item:IsA("Model") and (item.Name:lower():find("foodcounter") or item.Name:lower():find("tray")) then
-                -- Look for the food model inside counter/tray
-                local food = nil
-                for _, child in pairs(item:GetChildren()) do
-                    if child:IsA("Model") then
-                        food = child
-                        break
-                    end
-                end
-
+        for _, counter in pairs(tycoon.Items:GetDescendants()) do
+            if counter:IsA("Model") and (counter.Name:lower():find("foodcounter") or counter.Name:lower():find("tray")) then
+                local food = counter:FindFirstChildWhichIsA("Model")
                 if food and food.PrimaryPart then
-                    -- Find all customers
                     for _, ui in pairs(player.PlayerGui:GetChildren()) do
                         if ui.Name == "CustomerSpeechUI" and ui.Adornee then
                             local customerModel = ui.Adornee:FindFirstAncestorOfClass("Model")
@@ -162,8 +156,8 @@ local function autoServeFoodTeleport()
                                 -- Teleport food above customer
                                 food:SetPrimaryPartCFrame(customerModel.HumanoidRootPart.CFrame + Vector3.new(0,3,0))
                                 task.wait(0.2)
-                                -- Fire server event to confirm delivery
-                                ActionRemote("DeliverFood", item, tycoon)
+                                -- Notify server
+                                ActionRemote("DeliverFood", counter, tycoon)
                             end
                         end
                     end
@@ -232,7 +226,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "Instant Cook (Fast Oven)",
+    Name = "Instant Cook",
     CurrentValue = getgenv().Settings.InstantCook,
     Flag = "InstantCook",
     Callback = function(Value)
@@ -262,7 +256,7 @@ MainTab:CreateToggle({
     Callback = function(Value)
         getgenv().Settings.AutoServeFood = Value
         if Value then
-            task.spawn(autoServeFoodTeleport)
+            task.spawn(autoServeFood)
         end
     end
 })
