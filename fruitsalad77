@@ -598,7 +598,7 @@ CombatTab:CreateParagraph({
     Content = "Press [H] to auto attack a player."
 })
 CombatTab:CreateToggle({
-    Name = "Raycast Hitbox (Auto Redirect Hits)",
+    Title = "Raycast Hitbox (Auto Redirect Hits)",
     CurrentValue = false,
     Flag = "RaycastHook_Toggle",
     Callback = function(Value)
