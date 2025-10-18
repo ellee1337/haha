@@ -326,7 +326,7 @@ end
 -- Auto loop (very fast skill+click cycle)
 task.spawn(function()
     while task.wait(0.03) do
-        if AutoFarm.Enabled then
+        if AutoPvp.Enabled then
             useSkillPvp("One")
             task.wait(0.15)
             useSkillPvp("Two")
@@ -505,7 +505,7 @@ CombatTab:CreateToggle({
 CombatTab:CreateToggle({
     Name = "Auto Skill PVP (Skills + Attack)",
     CurrentValue = false,
-    Flag = "AutoSkillPvp",
+    Flag = "AutoPvpLevel",
     Callback = function(Value)
         AutoPvp.Enabled = Value
     end,
