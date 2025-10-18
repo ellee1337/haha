@@ -1,0 +1,165 @@
+local function lc(s) return (type(s)=="string") and s:lower() or "" end
+
+-- candidate action names to try for preparing and serving (keeps trying different possibilities)
+local prepareCandidates = {
+    "PrepareFood", "PrepareOrder", "StartPrepare", "FinishOrder", "CompleteOrder", "TakeOrder", "MakeFood"
+}
+local serveCandidates = {
+    "DeliverFood", "ServeFood", "GiveFood", "SendToCustomer", "DeliverOrder", "CollectOrder", "PlaceFood"
+}
+
+-- debug helper: prints a short table of found items in tycoon (useful if nothing works)
+local function dumpTycoonItems(tycoon)
+    if not tycoon or not tycoon:FindFirstChild("Items") then return end
+    warn("---- Tycoon Items Dump ----")
+    for _, v in ipairs(tycoon.Items:GetDescendants()) do
+        if v:IsA("Model") or v:IsA("Part") or v:IsA("Folder") then
+            local name = v.Name or "?"
+            local class = v.ClassName or "?"
+            warn(string.format("Found: %s   (%s)  parent=%s", name, class, v.Parent and v.Parent.Name or "nil"))
+        end
+    end
+    warn("---- End Dump ----")
+end
+
+-- robust send to taskEvent using candidate names
+local function tryTaskEvent(tycoon, targetModel, candidateNames)
+    if not tycoon or not targetModel then return false end
+    for _, name in ipairs(candidateNames) do
+        local ok, err = pcall(function()
+            taskEvent:FireServer({
+                ["Tycoon"] = tycoon,
+                ["Name"] = name,
+                ["FurnitureModel"] = targetModel
+            })
+        end)
+        if ok then
+            -- got a response without runtime error — consider this a success attempt (may still be ignored server-side)
+            return true, name
+        end
+    end
+    return false, nil
+end
+
+-- heuristics: is this model likely an order/prepare stand?
+local function isPrepareCandidate(obj)
+    local n = lc(obj.Name)
+    if n:find("order") or n:find("stand") or n:find("prep") or n:find("orderstand") or n:find("prepstand") then
+        return true
+    end
+    -- check for children that hint at being an order spot
+    for _, c in ipairs(obj:GetChildren()) do
+        local cn = lc(c.Name)
+        if cn:find("order") or cn:find("slot") or cn:find("food") or cn:find("ready") then
+            return true
+        end
+    end
+    return false
+end
+
+-- heuristics: is this model likely a food counter/tray/plate to give?
+local function isServeCandidate(obj)
+    local n = lc(obj.Name)
+    if n:find("tray") or n:find("foodcounter") or n:find("counter") or n:find("plate") or n:find("pickup") or n:find("pickupspot") then
+        return true
+    end
+    for _, c in ipairs(obj:GetChildren()) do
+        local cn = lc(c.Name)
+        if cn:find("food") or cn:find("plate") or cn:find("tray") or cn:find("ready") then
+            return true
+        end
+    end
+    return false
+end
+
+-- single pass prepare (tries all candidates found)
+local function scanAndPrepareOnce()
+    local tycoon = getTycoon()
+    if not tycoon then return end
+    local foundAny = false
+    for _, obj in ipairs(tycoon.Items:GetDescendants()) do
+        -- check Model or Folder or Part as candidate
+        if (obj:IsA("Model") or obj:IsA("Part") or obj:IsA("Folder")) and isPrepareCandidate(obj) then
+            foundAny = true
+            local success, used = tryTaskEvent(tycoon, obj, prepareCandidates)
+            if success then
+                print("[AutoPrepare] attempted prepare on:", obj:GetFullName(), "using action:", used)
+            else
+                warn("[AutoPrepare] tried candidates but failed for:", obj:GetFullName())
+            end
+            task.wait(0.08)
+        end
+    end
+    if not foundAny then
+        -- helpful debug dump once if nothing found
+        warn("[AutoPrepare] No prepare candidates found in tycoon. Dumping items for inspection.")
+        dumpTycoonItems(tycoon)
+    end
+end
+
+-- single pass serve (tries all candidates found)
+local function scanAndServeOnce()
+    local tycoon = getTycoon()
+    if not tycoon then return end
+    local foundAny = false
+    for _, obj in ipairs(tycoon.Items:GetDescendants()) do
+        if (obj:IsA("Model") or obj:IsA("Part") or obj:IsA("Folder")) and isServeCandidate(obj) then
+            foundAny = true
+            local success, used = tryTaskEvent(tycoon, obj, serveCandidates)
+            if success then
+                print("[AutoServe] attempted serve on:", obj:GetFullName(), "using action:", used)
+            else
+                warn("[AutoServe] tried candidates but failed for:", obj:GetFullName())
+            end
+            task.wait(0.08)
+        end
+    end
+    if not foundAny then
+        warn("[AutoServe] No serve candidates found in tycoon. Dumping items for inspection.")
+        dumpTycoonItems(tycoon)
+    end
+end
+
+-- background loops (uses getgenv().Settings.AutoPrepare and AutoServeFood flags)
+task.spawn(function()
+    while true do
+        if getgenv().Settings.AutoPrepare then
+            pcall(scanAndPrepareOnce)
+        end
+        task.wait(1) -- tune this (1s) as needed
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if getgenv().Settings.AutoServeFood then
+            pcall(scanAndServeOnce)
+        end
+        task.wait(1)
+    end
+end)
+
+-- Optional: if you want the script to try the Cook event before preparing (some games require cooking step)
+task.spawn(function()
+    while true do
+        if getgenv().Settings.InstantCook then
+            -- try to spam the cook remote but targeted to ovens inside tycoon if any exist
+            local tycoon = getTycoon()
+            if tycoon then
+                for _, v in ipairs(tycoon.Items:GetDescendants()) do
+                    if lc(v.Name):find("oven") or lc(v.Name):find("cook") or lc(v.Name):find("stove") then
+                        local ok = pcall(function()
+                            cookEvent:FireServer("Interact", v, "Oven")
+                        end)
+                        if ok then
+                            -- no need to print every fire to avoid spam, comment next line if noisy
+                            print("[InstantCook] fired cook event on", v:GetFullName())
+                        end
+                        task.wait(0.05)
+                    end
+                end
+            end
+        end
+        task.wait(0.5)
+    end
+end)
