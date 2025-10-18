@@ -31,7 +31,7 @@ local Highlights = {}
 local BillboardCache = {}
 
 ------------------------------------------------------------
--- 🧠 Raycast Hook (Silent Aim Assist)
+-- 🧠 Raycast Hook (Silent Aim Assist - Only Active When Aimlock Enabled)
 ------------------------------------------------------------
 local Workspace = game:GetService("Workspace")
 local mt = getrawmetatable(game)
@@ -42,9 +42,15 @@ local function GetClosestPlayer()
     local nearestPlayer = nil
     local shortestDistance = math.huge
 
+    local localChar = LocalPlayer.Character
+    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then
+        return nil
+    end
+    local localHRP = localChar.HumanoidRootPart
+
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).magnitude
+            local distance = (localHRP.Position - player.Character.HumanoidRootPart.Position).Magnitude
             if distance < shortestDistance then
                 shortestDistance = distance
                 nearestPlayer = player
@@ -57,15 +63,13 @@ end
 mt.__namecall = newcclosure(function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
-    
-    if method == "Raycast" then
-        local origin = args[1]
-        local direction = args[2]
 
+    -- ✅ Only redirect Raycasts when Aimlock is enabled
+    if method == "Raycast" and Combat.Aimlock then
         local result = oldNamecall(self, ...)
 
         local target = GetClosestPlayer()
-        if target then
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             return {
                 Instance = target.Character.HumanoidRootPart,
                 Position = target.Character.HumanoidRootPart.Position,
@@ -80,7 +84,6 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 
 setreadonly(mt, true)
-
 ------------------------------------------------------------
 -- ✈️ Fly Script
 ------------------------------------------------------------
