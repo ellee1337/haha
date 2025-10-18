@@ -1,4 +1,3 @@
-
 -- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -10,6 +9,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local Workspace = game:GetService("Workspace")
 
 ------------------------------------------------------------
 -- 🎯 Combat Settings
@@ -31,9 +31,8 @@ local Highlights = {}
 local BillboardCache = {}
 
 ------------------------------------------------------------
--- 🧠 Raycast Hook (Silent Aim Assist - Only Active When Aimlock Enabled)
+-- 🧠 Raycast Hook (Silent Aim Assist)
 ------------------------------------------------------------
-local Workspace = game:GetService("Workspace")
 local mt = getrawmetatable(game)
 setreadonly(mt, false)
 local oldNamecall = mt.__namecall
@@ -41,7 +40,6 @@ local oldNamecall = mt.__namecall
 local function GetClosestPlayer()
     local nearestPlayer = nil
     local shortestDistance = math.huge
-
     local localChar = LocalPlayer.Character
     if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then
         return nil
@@ -64,10 +62,8 @@ mt.__namecall = newcclosure(function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
 
-    -- ✅ Only redirect Raycasts when Aimlock is enabled
-    if method == "Raycast" and Combat.Aimlock then
+    if method == "Raycast" then
         local result = oldNamecall(self, ...)
-
         local target = GetClosestPlayer()
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             return {
@@ -76,7 +72,6 @@ mt.__namecall = newcclosure(function(self, ...)
                 Material = Enum.Material.Plastic
             }
         end
-
         return result
     end
 
@@ -84,6 +79,7 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 
 setreadonly(mt, true)
+
 ------------------------------------------------------------
 -- ✈️ Fly Script
 ------------------------------------------------------------
@@ -176,7 +172,6 @@ local function getNearestPlayer()
     return nearestPlayer
 end
 
--- Aimlock
 RunService.RenderStepped:Connect(function()
     if Combat.Aimlock then
         local target = getNearestPlayer()
