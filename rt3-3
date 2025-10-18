@@ -1,4 +1,4 @@
--- 🍳 Auto Restaurant Script + Rayfield UI
+-- 🍽️ Full Auto Restaurant Script + Rayfield UI
 -- Made by cookie codes
 
 -- ⚙️ Load Rayfield UI
@@ -8,20 +8,22 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local taskEvent = replicatedStorage:WaitForChild("Events"):WaitForChild("Restaurant"):WaitForChild("TaskCompleted")
-local playerGui = player:WaitForChild("PlayerGui")
+local cookEvent = replicatedStorage:WaitForChild("Events"):WaitForChild("Cook"):WaitForChild("CookInputRequested")
 
 -- ⚙️ Settings
 getgenv().Settings = {
     AutoCustomer = false,
     PickupCash = false,
     PickupDishes = false,
-    InstantCook = false
+    InstantCook = false,
+    AutoPrepare = false,
+    AutoServeFood = false,
+    AntiAFK = true
 }
 
 ------------------------------------------------------------
--- ⚙️ Core Functions
+-- 🧠 Helper Functions
 ------------------------------------------------------------
-
 local function getTycoon()
     for _, tycoon in pairs(workspace.Tycoons:GetChildren()) do
         for _, v in pairs(tycoon:GetChildren()) do
@@ -42,6 +44,9 @@ local function ActionRemote(Type, Model, tycoon)
     taskEvent:FireServer(args)
 end
 
+------------------------------------------------------------
+-- 👥 Auto Seat Customers
+------------------------------------------------------------
 local function processCustomerRequests()
     local tycoon = getTycoon()
     if not tycoon then return end
@@ -54,7 +59,7 @@ local function processCustomerRequests()
         end
     end
 
-    for _, ui in pairs(playerGui:GetChildren()) do
+    for _, ui in pairs(player.PlayerGui:GetChildren()) do
         if ui.Name == "CustomerSpeechUI" and ui.Adornee then
             for _, desc in pairs(ui:GetDescendants()) do
                 if desc.Name == "Header" and desc:IsA("TextLabel") then
@@ -78,6 +83,9 @@ local function processCustomerRequests()
     end
 end
 
+------------------------------------------------------------
+-- 💵 Auto Collect Functions
+------------------------------------------------------------
 local function collectBills(tycoon)
     local surface = tycoon.Items.Surface
     for _, model in pairs(surface:GetChildren()) do
@@ -98,21 +106,69 @@ local function collectDishes(tycoon)
     end
 end
 
+------------------------------------------------------------
+-- 🔥 Instant Cook (Your Original Version)
+------------------------------------------------------------
 local function instantCook()
     while task.wait() and getgenv().Settings.InstantCook do
         for i = 1, 5 do
-            replicatedStorage:WaitForChild("Events")
-                :WaitForChild("Cook")
-                :WaitForChild("CookInputRequested")
-                :FireServer("Interact", workspace, "Oven")
+            cookEvent:FireServer("Interact", workspace, "Oven")
         end
     end
 end
 
 ------------------------------------------------------------
+-- 🍔 Auto Prepare Food
+------------------------------------------------------------
+local function autoPrepare()
+    while task.wait(1) and getgenv().Settings.AutoPrepare do
+        local tycoon = getTycoon()
+        if not tycoon then continue end
+
+        for _, item in pairs(tycoon.Items:GetDescendants()) do
+            if item.Name:lower():find("orderstand") then
+                ActionRemote("PrepareFood", item, tycoon)
+                task.wait(0.2)
+            end
+        end
+    end
+end
+
+------------------------------------------------------------
+-- 🍟 Auto Give Food to Customer
+------------------------------------------------------------
+local function autoServeFood()
+    while task.wait(1) and getgenv().Settings.AutoServeFood do
+        local tycoon = getTycoon()
+        if not tycoon then continue end
+
+        for _, item in pairs(tycoon.Items:GetDescendants()) do
+            if item.Name:lower():find("foodcounter") or item.Name:lower():find("tray") then
+                ActionRemote("DeliverFood", item, tycoon)
+                task.wait(0.2)
+            end
+        end
+    end
+end
+
+------------------------------------------------------------
+-- 💤 Anti AFK System
+------------------------------------------------------------
+local function antiAFK()
+    player.Idled:Connect(function()
+        game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
+end
+
+if getgenv().Settings.AntiAFK then
+    task.spawn(antiAFK)
+end
+
+------------------------------------------------------------
 -- 🎛️ Rayfield UI Setup
 ------------------------------------------------------------
-
 local Window = Rayfield:CreateWindow({
     Name = "🍽️ Auto Restaurant System",
     LoadingTitle = "Loading Automation Hub",
@@ -127,7 +183,7 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 
 MainTab:CreateToggle({
-    Name = "Auto Serve Customers",
+    Name = "Auto Seat / Take Customers",
     CurrentValue = getgenv().Settings.AutoCustomer,
     Flag = "AutoCustomer",
     Callback = function(Value)
@@ -165,24 +221,40 @@ MainTab:CreateToggle({
     end
 })
 
+MainTab:CreateToggle({
+    Name = "Auto Prepare Food",
+    CurrentValue = getgenv().Settings.AutoPrepare,
+    Flag = "AutoPrepare",
+    Callback = function(Value)
+        getgenv().Settings.AutoPrepare = Value
+        if Value then
+            task.spawn(autoPrepare)
+        end
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Auto Give Food to Customer",
+    CurrentValue = getgenv().Settings.AutoServeFood,
+    Flag = "AutoServeFood",
+    Callback = function(Value)
+        getgenv().Settings.AutoServeFood = Value
+        if Value then
+            task.spawn(autoServeFood)
+        end
+    end
+})
+
 ------------------------------------------------------------
--- 🔁 Main Automation Loop
+-- 🔁 Main Loop
 ------------------------------------------------------------
 coroutine.wrap(function()
     while task.wait(1) do
         local tycoon = getTycoon()
         if tycoon then
-            if getgenv().Settings.AutoCustomer then
-                processCustomerRequests()
-            end
-            if getgenv().Settings.PickupCash then
-                collectBills(tycoon)
-            end
-            if getgenv().Settings.PickupDishes then
-                collectDishes(tycoon)
-            end
-        else
-            warn("⚠️ Could not find your tycoon!")
+            if getgenv().Settings.AutoCustomer then processCustomerRequests() end
+            if getgenv().Settings.PickupCash then collectBills(tycoon) end
+            if getgenv().Settings.PickupDishes then collectDishes(tycoon) end
         end
     end
 end)()
