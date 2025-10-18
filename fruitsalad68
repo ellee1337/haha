@@ -420,6 +420,31 @@ task.spawn(function()
     end
 end)
 
+------------------------------------------------------------
+-- 💎 Gems / Gem Reward Giver
+------------------------------------------------------------
+local AutoGems = {
+    Enabled = false,
+    Amount = 1000000000, -- Default gems amount
+}
+
+-- Function to give gems
+local function giveGems()
+    local args = {
+        [1] = AutoGems.Amount
+    }
+    game:GetService("ReplicatedStorage").CratesUtilities.Remotes.GiveReward:FireServer(unpack(args))
+end
+
+-- Auto loop for gems
+task.spawn(function()
+    while task.wait(1) do -- Fires every 1s
+        if AutoGems.Enabled then
+            giveGems()
+        end
+    end
+end)
+
 
 ------------------------------------------------------------
 -- 👁️ ESP
@@ -673,6 +698,28 @@ MiscTab:CreateToggle({
     end,
 })
 
+local GemsSection = MiscTab:CreateSection("💎 Gems Reward")
+
+MiscTab:CreateToggle({
+    Name = "Auto Gems",
+    CurrentValue = false,
+    Flag = "Auto_Gems_Toggle",
+    Callback = function(Value)
+        AutoGems.Enabled = Value
+    end,
+})
+
+MiscTab:CreateSlider({
+    Name = "Gem Amount",
+    Range = {1000, 1000000000000000}, -- min to max
+    Increment = 1000,
+    Suffix = " gems",
+    CurrentValue = AutoGems.Amount,
+    Flag = "Gem_Amount_Slider",
+    Callback = function(Value)
+        AutoGems.Amount = Value
+    end,
+})
 
 
 
