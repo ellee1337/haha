@@ -371,52 +371,6 @@ end)
 
 
 ------------------------------------------------------------
--- 💪 Global Anti Ragdoll System
-------------------------------------------------------------
-local AntiRagdoll = {Enabled = false}
-
--- Disable ragdoll constraints for any character
-local function disableRagdollForCharacter(char)
-    if not char then return end
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BallSocketConstraint")
-            or part:IsA("HingeConstraint")
-            or part:IsA("SpringConstraint")
-            or part:IsA("BodyVelocity")
-            or part:IsA("BodyGyro")
-            or part:IsA("VectorForce") then
-            part:Destroy()
-        end
-    end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.PlatformStand = false
-    end
-end
-
--- Continuously protect all other players from ragdoll
-RunService.Heartbeat:Connect(function()
-    if AntiRagdoll.Enabled then
-        for _, player in pairs(Players:GetPlayers()) do
-            -- Everyone EXCEPT you (LocalPlayer)
-            if player ~= LocalPlayer and player.Character then
-                disableRagdollForCharacter(player.Character)
-            end
-        end
-    end
-end)
-
--- Apply when other players respawn
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        if AntiRagdoll.Enabled then
-            task.wait(1)
-            disableRagdollForCharacter(player.Character)
-        end
-    end)
-end)
-
-------------------------------------------------------------
 -- 👁️ ESP
 ------------------------------------------------------------
 -- Chams
@@ -622,15 +576,6 @@ MiscTab:CreateSlider({
     Callback = function(value)
         magnetDistance = value
     end
-})
--- UI Toggle in MiscTab
-MiscTab:CreateToggle({
-    Name = "Anti Ragdoll (Others Only)",
-    CurrentValue = false,
-    Flag = "AntiRagdoll_Toggle",
-    Callback = function(Value)
-        AntiRagdoll.Enabled = Value
-    end,
 })
 MiscTab:CreateToggle({
     Name = "Invisible Mode (Client-Side)",
