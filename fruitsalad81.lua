@@ -1,5 +1,11 @@
--- Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+
+if not success or not Rayfield then
+    warn("❌ Failed to load Rayfield UI Library.")
+    return
+end
 
 ------------------------------------------------------------
 -- ⚙️ Services
@@ -9,8 +15,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local Workspace = game:GetService("Workspace")
-local mt = getrawmetatable(game)
 
 ------------------------------------------------------------
 -- 🎯 Combat Settings
@@ -34,6 +38,8 @@ local BillboardCache = {}
 ------------------------------------------------------------
 -- (Other sections remain unchanged above)
 ------------------------------------------------------------
+local Workspace = game:GetService("Workspace")
+local mt = getrawmetatable(game)
 setreadonly(mt, false)
 local oldNamecall = mt.__namecall
 
