@@ -421,48 +421,6 @@ task.spawn(function()
 end)
 
 ------------------------------------------------------------
--- 💎 Universal Gems Reward Script (Gems/Gem/gems/gem/GEMS)
-------------------------------------------------------------
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- ✅ You can change this value to whatever gem amount you want
-local gemAmount = 1000000000000000 
-
--- Try firing every possible remote name or argument variation
-local function giveGems()
-    local possibleRemotes = {
-        "CratesUtilities", "CrateUtilities", "RewardUtilities"
-    }
-
-    local possibleNames = {"Gems", "Gem", "gems", "gem", "GEMS"}
-
-    for _, folderName in pairs(possibleRemotes) do
-        local folder = ReplicatedStorage:FindFirstChild(folderName)
-        if folder and folder:FindFirstChild("Remotes") then
-            for _, remoteName in pairs(possibleNames) do
-                if folder.Remotes:FindFirstChild(remoteName) then
-                    local remote = folder.Remotes[remoteName]
-                    local args = {[1] = gemAmount}
-                    remote:FireServer(unpack(args))
-                    warn("✅ Fired gem reward remote:", remoteName, "in", folderName)
-                end
-            end
-
-            -- Also try the GiveReward remote (if it exists)
-            if folder.Remotes:FindFirstChild("GiveReward") then
-                local remote = folder.Remotes.GiveReward
-                for _, argName in pairs(possibleNames) do
-                    local args = {[1] = gemAmount, [argName] = gemAmount}
-                    remote:FireServer(unpack(args))
-                    warn("✅ Fired GiveReward remote with", argName)
-                end
-            end
-        end
-    end
-end
-
-
-------------------------------------------------------------
 -- 👁️ ESP
 ------------------------------------------------------------
 -- Chams
@@ -713,24 +671,6 @@ MiscTab:CreateToggle({
         setInvisibility(Value)
     end,
 })
-
-------------------------------------------------------------
--- 🔁 Auto Gems Toggle
-------------------------------------------------------------
-
-local GemsSection = MiscTab:CreateSection("💎 Gems Reward")
-
-
-local AutoGems = {Enabled = false}
-
-task.spawn(function()
-    while task.wait(1) do
-        if AutoGems.Enabled then
-            giveGems()
-        end
-    end
-end)
-
 
 
 ------------------------------------------------------------
