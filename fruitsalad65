@@ -371,6 +371,57 @@ end)
 
 
 ------------------------------------------------------------
+-- 💪 Self Hitbox Expander (Only affects local player)
+------------------------------------------------------------
+local SelfHitbox = {
+    Enabled = false,
+    Size = Vector3.new(10, 10, 10), -- Default size
+    Color = Color3.fromRGB(0, 255, 0), -- Green
+    Transparency = 0.6,
+    OriginalSize = nil
+}
+
+-- Function to apply hitbox effect to self
+local function applySelfHitbox()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        -- Save original size if not yet stored
+        if not SelfHitbox.OriginalSize then
+            SelfHitbox.OriginalSize = hrp.Size
+        end
+        hrp.Size = SelfHitbox.Size
+        hrp.Transparency = SelfHitbox.Transparency
+        hrp.Color = SelfHitbox.Color
+        hrp.Material = Enum.Material.Neon
+        hrp.CanCollide = false
+    end
+end
+
+-- Function to restore default hitbox
+local function restoreSelfHitbox()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp and SelfHitbox.OriginalSize then
+        hrp.Size = SelfHitbox.OriginalSize
+        hrp.Transparency = 1
+        hrp.Material = Enum.Material.Plastic
+    end
+end
+
+-- Auto reapply every 0.5s while enabled
+task.spawn(function()
+    while task.wait(0.5) do
+        if SelfHitbox.Enabled then
+            applySelfHitbox()
+        end
+    end
+end)
+
+
+------------------------------------------------------------
 -- 👁️ ESP
 ------------------------------------------------------------
 -- Chams
@@ -512,6 +563,41 @@ CombatTab:CreateToggle({
 CombatTab:CreateParagraph({
     Title = "Auto Attack",
     Content = "Press [H] to auto attack a player."
+})
+
+local SelfHitboxSection = CombatTab:CreateSection("💪 Self Hitbox Expander")
+
+CombatTab:CreateToggle({
+    Name = "Enable Self Hitbox",
+    CurrentValue = false,
+    Flag = "Self_Hitbox_Toggle",
+    Callback = function(Value)
+        SelfHitbox.Enabled = Value
+        if not Value then
+            restoreSelfHitbox()
+        end
+    end,
+})
+
+CombatTab:CreateSlider({
+    Name = "Hitbox Size",
+    Range = {5, 30},
+    Increment = 1,
+    Suffix = " studs",
+    CurrentValue = 10,
+    Flag = "Self_Hitbox_Size_Slider",
+    Callback = function(Value)
+        SelfHitbox.Size = Vector3.new(Value, Value, Value)
+    end,
+})
+
+CombatTab:CreateColorPicker({
+    Name = "Hitbox Color",
+    Color = Color3.fromRGB(0, 255, 0),
+    Flag = "Self_Hitbox_Color_Picker",
+    Callback = function(Value)
+        SelfHitbox.Color = Value
+    end,
 })
 
 -- Movement Tab
