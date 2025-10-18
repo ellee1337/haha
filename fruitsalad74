@@ -1,3 +1,4 @@
+
 -- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -9,7 +10,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local Workspace = game:GetService("Workspace")
 
 ------------------------------------------------------------
 -- 🎯 Combat Settings
@@ -31,57 +31,7 @@ local Highlights = {}
 local BillboardCache = {}
 
 ------------------------------------------------------------
--- 🧠 Raycast Hook (Silent Aim Assist)
-------------------------------------------------------------
-local mt = getrawmetatable(game)
-setreadonly(mt, false)
-local oldNamecall = mt.__namecall
-
-local function GetClosestPlayer()
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-    local localChar = LocalPlayer.Character
-    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then
-        return nil
-    end
-    local localHRP = localChar.HumanoidRootPart
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (localHRP.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestPlayer = player
-            end
-        end
-    end
-    return nearestPlayer
-end
-
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-
-    if method == "Raycast" then
-        local result = oldNamecall(self, ...)
-        local target = GetClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            return {
-                Instance = target.Character.HumanoidRootPart,
-                Position = target.Character.HumanoidRootPart.Position,
-                Material = Enum.Material.Plastic
-            }
-        end
-        return result
-    end
-
-    return oldNamecall(self, ...)
-end)
-
-setreadonly(mt, true)
-
-------------------------------------------------------------
--- ✈️ Fly Script
+-- ✈️ Fly Script (MiscTab Toggle)
 ------------------------------------------------------------
 local flying = false
 local ctrl, lastctrl = {f=0,b=0,l=0,r=0}, {f=0,b=0,l=0,r=0}
@@ -102,6 +52,7 @@ local function Fly()
     bv = Instance.new("BodyVelocity", hrp)
     bv.Velocity = Vector3.new(0, 0.1, 0)
     bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
     hum.PlatformStand = true
 
     while flying do
@@ -113,16 +64,19 @@ local function Fly()
         end
 
         if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
-            bv.Velocity = ((Camera.CFrame.LookVector * (ctrl.f + ctrl.b)) +
-            ((Camera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * .2, 0)).p - Camera.CFrame.p)) * speed
+            bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (ctrl.f + ctrl.b))
+                + ((workspace.CurrentCamera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * .2, 0)).p
+                - workspace.CurrentCamera.CFrame.p)) * speed
             lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
         elseif speed ~= 0 then
-            bv.Velocity = ((Camera.CFrame.LookVector * (lastctrl.f + lastctrl.b)) +
-            ((Camera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * .2, 0)).p - Camera.CFrame.p)) * speed
+            bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (lastctrl.f + lastctrl.b))
+                + ((workspace.CurrentCamera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * .2, 0)).p
+                - workspace.CurrentCamera.CFrame.p)) * speed
         else
             bv.Velocity = Vector3.new(0, 0.1, 0)
         end
-        bg.CFrame = Camera.CFrame
+
+        bg.CFrame = workspace.CurrentCamera.CFrame
     end
 
     hum.PlatformStand = false
@@ -130,7 +84,7 @@ local function Fly()
     bv:Destroy()
 end
 
--- Fly controls
+-- Fly movement controls (keep WASD)
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.W then ctrl.f = 1
@@ -138,6 +92,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
     elseif input.KeyCode == Enum.KeyCode.A then ctrl.l = -1
     elseif input.KeyCode == Enum.KeyCode.D then ctrl.r = 1 end
 end)
+
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.W then ctrl.f = 0
     elseif input.KeyCode == Enum.KeyCode.S then ctrl.b = 0
@@ -146,7 +101,7 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 ------------------------------------------------------------
--- 🎯 Aimlock + Auto Attack
+-- 🎯 Combat System
 ------------------------------------------------------------
 local function getNearestPlayer()
     local nearestPlayer = nil
@@ -160,6 +115,7 @@ local function getNearestPlayer()
             local char = player.Character
             local hrp = char:FindFirstChild("HumanoidRootPart")
             local hum = char:FindFirstChildOfClass("Humanoid")
+            
             if hrp and hum and hum.Health > 0 then
                 local distance = (hrp.Position - localHRP.Position).Magnitude
                 if distance < shortestDistance then
@@ -169,9 +125,11 @@ local function getNearestPlayer()
             end
         end
     end
+
     return nearestPlayer
 end
 
+-- Aimlock
 RunService.RenderStepped:Connect(function()
     if Combat.Aimlock then
         local target = getNearestPlayer()
@@ -188,6 +146,7 @@ end)
 
 RunService.Heartbeat:Connect(function()
     if Combat.AutoAttack then
+        -- Instantly spam left clicks nonstop
         mouse1click()
     end
 end)
@@ -555,6 +514,7 @@ CombatTab:CreateParagraph({
 })
 
 
+
 -- Movement Tab
 
 local MovementTab = Window:CreateTab("🏃 Movement", 4483362458)
@@ -627,6 +587,7 @@ MiscTab:CreateToggle({
         setInvisibility(Value)
     end,
 })
+
 
 ------------------------------------------------------------
 -- 🧹 Destroy UI Button
