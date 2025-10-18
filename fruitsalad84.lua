@@ -304,35 +304,45 @@ task.spawn(function()
 end)
 
 ------------------------------------------------------------
--- ⚔️ Auto Skill PVP
+-- ⚔️ Auto Farm Level (1 Skill = 1 Click | Fast Version)
 ------------------------------------------------------------
-local AutoPvp = {Enabled = false}
+local AutoFarm = {Enabled = false}
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- Function to press key only (no mouse click)
-local function useSkillKeyPvp(key)
+-- Function: press skill key + click quickly
+local function useSkillWithClick(key)
+    -- Press skill key
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
-    task.wait(0.5)
+    task.wait(0.03)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
+
+    -- Quick left click right after skill
+    task.wait(0.03)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+    task.wait(0.02)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
 end
 
--- Auto loop for skilling
+-- Auto loop (very fast skill+click cycle)
 task.spawn(function()
-    while task.wait(0.8) do
-        if AutoPvp.Enabled then
-            useSkillKeyPvp("One")
-            task.wait(0.8)
-            useSkillKeyPvp("Two")
-            task.wait(0.8)
-            useSkillKeyPvp("Three")
-            task.wait(0.8)
-            useSkillKeyPvp("Four")
-            task.wait(0.8)
-            useSkillKeyPvp("Five")
-            task.wait(0.8)
-            useSkillKeyPvp("E")
-            task.wait(0.8)
-            useSkillKeyPvp("G")
+    while task.wait(0.03) do
+        if AutoFarm.Enabled then
+            useSkillWithClick("One")
+            task.wait(0.15)
+            useSkillWithClick("Two")
+            task.wait(0.15)
+            useSkillWithClick("Three")
+            task.wait(0.15)
+            useSkillWithClick("Four")
+            task.wait(0.15)
+            useSkillWithClick("Five")
+            task.wait(0.15)
+            useSkillWithClick("E")
+            task.wait(0.15)
+            useSkillWithClick("G")
+            task.wait(0.15)
+            useSkillWithClick("Six")
+            task.wait(0.15)
         end
     end
 end)
