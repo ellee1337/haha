@@ -24,7 +24,6 @@ local Combat = {
 local Movement = {
     SpeedEnabled = false,
     WalkSpeed = 16,
-    NoDashCooldown = false
 }
 
 local ESP = {Enabled = false}
@@ -32,7 +31,58 @@ local Highlights = {}
 local BillboardCache = {}
 
 ------------------------------------------------------------
--- ✈️ Fly Script (MiscTab Toggle)
+-- 🧠 Raycast Hook (Silent Aim Assist)
+------------------------------------------------------------
+local Workspace = game:GetService("Workspace")
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local oldNamecall = mt.__namecall
+
+local function GetClosestPlayer()
+    local nearestPlayer = nil
+    local shortestDistance = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearestPlayer = player
+            end
+        end
+    end
+    return nearestPlayer
+end
+
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    
+    if method == "Raycast" then
+        local origin = args[1]
+        local direction = args[2]
+
+        local result = oldNamecall(self, ...)
+
+        local target = GetClosestPlayer()
+        if target then
+            return {
+                Instance = target.Character.HumanoidRootPart,
+                Position = target.Character.HumanoidRootPart.Position,
+                Material = Enum.Material.Plastic
+            }
+        end
+
+        return result
+    end
+
+    return oldNamecall(self, ...)
+end)
+
+setreadonly(mt, true)
+
+------------------------------------------------------------
+-- ✈️ Fly Script
 ------------------------------------------------------------
 local flying = false
 local ctrl, lastctrl = {f=0,b=0,l=0,r=0}, {f=0,b=0,l=0,r=0}
@@ -53,7 +103,6 @@ local function Fly()
     bv = Instance.new("BodyVelocity", hrp)
     bv.Velocity = Vector3.new(0, 0.1, 0)
     bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-
     hum.PlatformStand = true
 
     while flying do
@@ -65,19 +114,16 @@ local function Fly()
         end
 
         if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
-            bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (ctrl.f + ctrl.b))
-                + ((workspace.CurrentCamera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * .2, 0)).p
-                - workspace.CurrentCamera.CFrame.p)) * speed
+            bv.Velocity = ((Camera.CFrame.LookVector * (ctrl.f + ctrl.b)) +
+            ((Camera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * .2, 0)).p - Camera.CFrame.p)) * speed
             lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
         elseif speed ~= 0 then
-            bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (lastctrl.f + lastctrl.b))
-                + ((workspace.CurrentCamera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * .2, 0)).p
-                - workspace.CurrentCamera.CFrame.p)) * speed
+            bv.Velocity = ((Camera.CFrame.LookVector * (lastctrl.f + lastctrl.b)) +
+            ((Camera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * .2, 0)).p - Camera.CFrame.p)) * speed
         else
             bv.Velocity = Vector3.new(0, 0.1, 0)
         end
-
-        bg.CFrame = workspace.CurrentCamera.CFrame
+        bg.CFrame = Camera.CFrame
     end
 
     hum.PlatformStand = false
@@ -85,7 +131,7 @@ local function Fly()
     bv:Destroy()
 end
 
--- Fly movement controls (keep WASD)
+-- Fly controls
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.W then ctrl.f = 1
@@ -93,7 +139,6 @@ UserInputService.InputBegan:Connect(function(input, processed)
     elseif input.KeyCode == Enum.KeyCode.A then ctrl.l = -1
     elseif input.KeyCode == Enum.KeyCode.D then ctrl.r = 1 end
 end)
-
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.W then ctrl.f = 0
     elseif input.KeyCode == Enum.KeyCode.S then ctrl.b = 0
@@ -102,7 +147,7 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 ------------------------------------------------------------
--- 🎯 Combat System
+-- 🎯 Aimlock + Auto Attack
 ------------------------------------------------------------
 local function getNearestPlayer()
     local nearestPlayer = nil
@@ -116,7 +161,6 @@ local function getNearestPlayer()
             local char = player.Character
             local hrp = char:FindFirstChild("HumanoidRootPart")
             local hum = char:FindFirstChildOfClass("Humanoid")
-            
             if hrp and hum and hum.Health > 0 then
                 local distance = (hrp.Position - localHRP.Position).Magnitude
                 if distance < shortestDistance then
@@ -126,7 +170,6 @@ local function getNearestPlayer()
             end
         end
     end
-
     return nearestPlayer
 end
 
@@ -147,7 +190,6 @@ end)
 
 RunService.Heartbeat:Connect(function()
     if Combat.AutoAttack then
-        -- Instantly spam left clicks nonstop
         mouse1click()
     end
 end)
@@ -371,56 +413,6 @@ end)
 
 
 ------------------------------------------------------------
--- 💪 Self Hitbox Expander (Only affects local player)
-------------------------------------------------------------
-local SelfHitbox = {
-    Enabled = false,
-    Size = Vector3.new(10, 10, 10), -- Default size
-    Color = Color3.fromRGB(0, 255, 0), -- Green
-    Transparency = 0.6,
-    OriginalSize = nil
-}
-
--- Function to apply hitbox effect to self
-local function applySelfHitbox()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        -- Save original size if not yet stored
-        if not SelfHitbox.OriginalSize then
-            SelfHitbox.OriginalSize = hrp.Size
-        end
-        hrp.Size = SelfHitbox.Size
-        hrp.Transparency = SelfHitbox.Transparency
-        hrp.Color = SelfHitbox.Color
-        hrp.Material = Enum.Material.Neon
-        hrp.CanCollide = false
-    end
-end
-
--- Function to restore default hitbox
-local function restoreSelfHitbox()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp and SelfHitbox.OriginalSize then
-        hrp.Size = SelfHitbox.OriginalSize
-        hrp.Transparency = 1
-        hrp.Material = Enum.Material.Plastic
-    end
-end
-
--- Auto reapply every 0.5s while enabled
-task.spawn(function()
-    while task.wait(0.5) do
-        if SelfHitbox.Enabled then
-            applySelfHitbox()
-        end
-    end
-end)
-
-------------------------------------------------------------
 -- 👁️ ESP
 ------------------------------------------------------------
 -- Chams
@@ -564,40 +556,6 @@ CombatTab:CreateParagraph({
     Content = "Press [H] to auto attack a player."
 })
 
-local SelfHitboxSection = CombatTab:CreateSection("💪 Self Hitbox Expander")
-
-CombatTab:CreateToggle({
-    Name = "Enable Self Hitbox",
-    CurrentValue = false,
-    Flag = "Self_Hitbox_Toggle",
-    Callback = function(Value)
-        SelfHitbox.Enabled = Value
-        if not Value then
-            restoreSelfHitbox()
-        end
-    end,
-})
-
-CombatTab:CreateSlider({
-    Name = "Hitbox Size",
-    Range = {5, 30},
-    Increment = 1,
-    Suffix = " studs",
-    CurrentValue = 10,
-    Flag = "Self_Hitbox_Size_Slider",
-    Callback = function(Value)
-        SelfHitbox.Size = Vector3.new(Value, Value, Value)
-    end,
-})
-
-CombatTab:CreateColorPicker({
-    Name = "Hitbox Color",
-    Color = Color3.fromRGB(0, 255, 0),
-    Flag = "Self_Hitbox_Color_Picker",
-    Callback = function(Value)
-        SelfHitbox.Color = Value
-    end,
-})
 
 -- Movement Tab
 
@@ -672,7 +630,6 @@ MiscTab:CreateToggle({
     end,
 })
 
-
 ------------------------------------------------------------
 -- 🧹 Destroy UI Button
 ------------------------------------------------------------
@@ -699,7 +656,6 @@ MiscTab:CreateButton({
         AutoFarm.Enabled = false
         AutoPvp.Enabled = false
         Movement.SpeedEnabled = false
-        Movement.NoDashCooldown = false
         Invisible.Enabled = false
         magnetActive = false
 
