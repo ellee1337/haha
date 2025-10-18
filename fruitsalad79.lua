@@ -99,83 +99,6 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 ------------------------------------------------------------
--- 🎯 Raycast Hook Integration (Toggle)
-------------------------------------------------------------
-local RaycastHook = {Enabled = false, OriginalNamecall = nil}
-local mt = getrawmetatable(game)
-local oldNamecall
-
-local function GetClosestPlayer()
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-    local localChar = LocalPlayer.Character
-    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local localHRP = localChar.HumanoidRootPart
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (localHRP.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestPlayer = player
-            end
-        end
-    end
-    return nearestPlayer
-end
-
-local function EnableRaycastHook()
-    if RaycastHook.Enabled or not mt then return end
-    RaycastHook.Enabled = true
-    setreadonly(mt, false)
-    RaycastHook.OriginalNamecall = RaycastHook.OriginalNamecall or mt.__namecall
-
-    mt.__namecall = newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-        if method == "Raycast" then
-            local result = RaycastHook.OriginalNamecall(self, ...)
-            local target = GetClosestPlayer()
-            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                return {
-                    Instance = target.Character.HumanoidRootPart,
-                    Position = target.Character.HumanoidRootPart.Position,
-                    Material = Enum.Material.Plastic
-                }
-            end
-            return result
-        end
-        return RaycastHook.OriginalNamecall(self, ...)
-    end)
-
-    setreadonly(mt, true)
-    print("✅ Raycast Hook Enabled")
-    pcall(function()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "🎯 Raycast Hook",
-            Text = "Enabled hitbox redirection!",
-            Duration = 3
-        })
-    end)
-end
-
-local function DisableRaycastHook()
-    if not RaycastHook.Enabled or not RaycastHook.OriginalNamecall then return end
-    setreadonly(mt, false)
-    mt.__namecall = RaycastHook.OriginalNamecall
-    setreadonly(mt, true)
-    RaycastHook.Enabled = false
-    print("❌ Raycast Hook Disabled")
-    pcall(function()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "🎯 Raycast Hook",
-            Text = "Disabled hitbox redirection.",
-            Duration = 3
-        })
-    end)
-end
-
-------------------------------------------------------------
 -- ⚔️ Combat / ESP / Movement / Misc Tabs (UI)
 ------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
@@ -194,20 +117,9 @@ CombatTab:CreateToggle({
         Combat.Aimlock = Value
     end,
 })
-CombatTab:CreateToggle({
-    Name = "Raycast Hitbox (Auto Redirect Hits)",
-    CurrentValue = false,
-    Callback = function(Value)
-        if Value then
-            EnableRaycastHook()
-        else
-            DisableRaycastHook()
-        end
-    end,
-})
 CombatTab:CreateParagraph({
     Title = "Info",
-    Content = "Press [H] to toggle Auto-Attack.\nUse Raycast Hook only in games using client-side raycasts."
+    Content = "Press [H] to toggle Auto-Attack.\nUse Aimlock to target nearest player."
 })
 
 -- Movement Tab
@@ -260,4 +172,5 @@ MiscTab:CreateButton({
         })
     end,
 })
+
 print("✅ Script Loaded — open Rayfield UI to toggle features.")
