@@ -31,74 +31,139 @@ local Highlights = {}
 local BillboardCache = {}
 
 ------------------------------------------------------------
--- 💥 Hitbox Expander
+-- ⚙️ Hitbox Toggle (Press X to toggle)
 ------------------------------------------------------------
 local hitboxEnabled = false
 local hitboxSize = 20
+local toggleKey = Enum.KeyCode.X
 
--- Setup Collision Group
-local function setupCollisionGroup()
-    if not pcall(function() PhysicsService:CreateCollisionGroup("ExpandedHitboxes") end) then end
+local Players = game:GetService("Players")
+local PhysicsService = game:GetService("PhysicsService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local HITBOX_NAME = "__LFB_Hitbox"
+
+------------------------------------------------------------
+-- 🧱 Setup Collision Group
+------------------------------------------------------------
+pcall(function() PhysicsService:CreateCollisionGroup("ExpandedHitboxes") end)
+pcall(function()
+    PhysicsService:CollisionGroupSetCollidable("ExpandedHitboxes", "Default", false)
+    PhysicsService:CollisionGroupSetCollidable("ExpandedHitboxes", "ExpandedHitboxes", false)
+end)
+
+------------------------------------------------------------
+-- 🧩 Helper Functions
+------------------------------------------------------------
+local function createHitbox(hrp)
+    if not hrp or not hrp:IsA("BasePart") then return end
+
+    -- remove old
+    local existing = hrp:FindFirstChild(HITBOX_NAME)
+    if existing and existing.Value then
+        existing.Value:Destroy()
+        existing:Destroy()
+    end
+
+    -- create new part
+    local part = Instance.new("Part")
+    part.Name = hrp.Parent.Name .. "_" .. HITBOX_NAME
+    part.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+    part.Transparency = 0.7
+    part.Color = Color3.fromRGB(255, 0, 0)
+    part.Material = Enum.Material.Neon
+    part.Anchored = false
+    part.Massless = true
+    part.CanCollide = false
+    part.CFrame = hrp.CFrame
+    part.Parent = workspace
+
+    -- collision group
     pcall(function()
-        PhysicsService:CollisionGroupSetCollidable("ExpandedHitboxes", "Default", false)
-        PhysicsService:CollisionGroupSetCollidable("ExpandedHitboxes", "ExpandedHitboxes", false)
+        PhysicsService:SetPartCollisionGroup(part, "ExpandedHitboxes")
     end)
-end
-setupCollisionGroup()
 
--- Apply hitbox to a player
+    -- weld it to HRP
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = part
+    weld.Part1 = hrp
+    weld.Parent = part
+
+    local ref = Instance.new("ObjectValue")
+    ref.Name = HITBOX_NAME
+    ref.Value = part
+    ref.Parent = hrp
+end
+
+local function removeHitbox(hrp)
+    if not hrp then return end
+    local tag = hrp:FindFirstChild(HITBOX_NAME)
+    if tag and tag.Value then
+        tag.Value:Destroy()
+        tag:Destroy()
+    end
+end
+
 local function applyHitbox(player)
     task.spawn(function()
-        local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:FindFirstChild("HumanoidRootPart") or char:WaitForChild("HumanoidRootPart", 5)
+        if not player.Character then player.CharacterAdded:Wait() end
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
 
         if hitboxEnabled then
-            hrp.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
-            hrp.Transparency = 0.9
-            hrp.BrickColor = BrickColor.new("Really red")
-            hrp.Material = Enum.Material.Neon
-            hrp.CanCollide = false
-            pcall(function()
-                PhysicsService:SetPartCollisionGroup(hrp, "ExpandedHitboxes")
-            end)
+            createHitbox(hrp)
         else
-            hrp.Size = Vector3.new(2, 2, 1)
-            hrp.Transparency = 1
-            hrp.BrickColor = BrickColor.new("Medium stone grey")
-            hrp.Material = Enum.Material.Plastic
-            hrp.CanCollide = false
-            pcall(function()
-                PhysicsService:SetPartCollisionGroup(hrp, "Default")
-            end)
+            removeHitbox(hrp)
         end
     end)
 end
 
--- Apply hitbox updates to all players
-local function updateAllPlayers()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            applyHitbox(player)
+local function updateAll()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            applyHitbox(plr)
         end
     end
 end
 
--- Character respawn handling
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        applyHitbox(player)
-        player.CharacterAdded:Connect(function()
-            applyHitbox(player)
+------------------------------------------------------------
+-- 👥 Player Connections
+------------------------------------------------------------
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer then
+        plr.CharacterAdded:Connect(function()
+            task.wait(0.2)
+            applyHitbox(plr)
         end)
+        applyHitbox(plr)
     end
 end
 
-Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
-        player.CharacterAdded:Connect(function()
-            applyHitbox(player)
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= LocalPlayer then
+        plr.CharacterAdded:Connect(function()
+            task.wait(0.2)
+            applyHitbox(plr)
         end)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    local p = workspace:FindFirstChild(plr.Name .. "_" .. HITBOX_NAME)
+    if p then p:Destroy() end
+end)
+
+------------------------------------------------------------
+-- 🎮 Keybind: Toggle Hitboxes
+------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == toggleKey then
+        hitboxEnabled = not hitboxEnabled
+        updateAll()
+        print("[Hitbox] Toggled:", hitboxEnabled and "ON" or "OFF")
     end
 end)
 
@@ -667,29 +732,6 @@ MiscTab:CreateToggle({
     Callback = function(Value)
         Invisible.Enabled = Value
         setInvisibility(Value)
-    end,
-})
--- ⚡ Hitbox Expander Toggle
-CombatTab:CreateToggle({
-    Name = "Hitbox Expander (Really Red HRP)",
-    CurrentValue = false,
-    Flag = "Hitbox_Expand",
-    Callback = function(Value)
-        hitboxEnabled = Value
-        updateAllPlayers()
-    end,
-})
-CombatTab:CreateSlider({
-    Name = "Hitbox Size",
-    Range = {5, 50},
-    Increment = 1,
-    CurrentValue = 20,
-    Flag = "Hitbox_Size",
-    Callback = function(Value)
-        hitboxSize = Value
-        if hitboxEnabled then
-            updateAllPlayers()
-        end
     end,
 })
 
