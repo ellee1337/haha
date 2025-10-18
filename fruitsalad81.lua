@@ -9,6 +9,8 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local Workspace = game:GetService("Workspace")
+local mt = getrawmetatable(game)
 
 ------------------------------------------------------------
 -- 🎯 Combat Settings
@@ -32,8 +34,6 @@ local BillboardCache = {}
 ------------------------------------------------------------
 -- (Other sections remain unchanged above)
 ------------------------------------------------------------
-local Workspace = game:GetService("Workspace")
-local mt = getrawmetatable(game)
 setreadonly(mt, false)
 local oldNamecall = mt.__namecall
 
