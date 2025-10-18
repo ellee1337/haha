@@ -31,6 +31,78 @@ local Highlights = {}
 local BillboardCache = {}
 
 ------------------------------------------------------------
+-- 💥 Hitbox Expander
+------------------------------------------------------------
+local hitboxEnabled = false
+local hitboxSize = 20
+
+-- Setup Collision Group
+local function setupCollisionGroup()
+    if not pcall(function() PhysicsService:CreateCollisionGroup("ExpandedHitboxes") end) then end
+    pcall(function()
+        PhysicsService:CollisionGroupSetCollidable("ExpandedHitboxes", "Default", false)
+        PhysicsService:CollisionGroupSetCollidable("ExpandedHitboxes", "ExpandedHitboxes", false)
+    end)
+end
+setupCollisionGroup()
+
+-- Apply hitbox to a player
+local function applyHitbox(player)
+    task.spawn(function()
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:FindFirstChild("HumanoidRootPart") or char:WaitForChild("HumanoidRootPart", 5)
+        if not hrp then return end
+
+        if hitboxEnabled then
+            hrp.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+            hrp.Transparency = 0.9
+            hrp.BrickColor = BrickColor.new("Really red")
+            hrp.Material = Enum.Material.Neon
+            hrp.CanCollide = false
+            pcall(function()
+                PhysicsService:SetPartCollisionGroup(hrp, "ExpandedHitboxes")
+            end)
+        else
+            hrp.Size = Vector3.new(2, 2, 1)
+            hrp.Transparency = 1
+            hrp.BrickColor = BrickColor.new("Medium stone grey")
+            hrp.Material = Enum.Material.Plastic
+            hrp.CanCollide = false
+            pcall(function()
+                PhysicsService:SetPartCollisionGroup(hrp, "Default")
+            end)
+        end
+    end)
+end
+
+-- Apply hitbox updates to all players
+local function updateAllPlayers()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            applyHitbox(player)
+        end
+    end
+end
+
+-- Character respawn handling
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        applyHitbox(player)
+        player.CharacterAdded:Connect(function()
+            applyHitbox(player)
+        end)
+    end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        player.CharacterAdded:Connect(function()
+            applyHitbox(player)
+        end)
+    end
+end)
+
+------------------------------------------------------------
 -- ✈️ Fly Script (MiscTab Toggle)
 ------------------------------------------------------------
 local flying = false
@@ -597,6 +669,30 @@ MiscTab:CreateToggle({
         setInvisibility(Value)
     end,
 })
+-- ⚡ Hitbox Expander Toggle
+CombatTab:CreateToggle({
+    Name = "Hitbox Expander (Really Red HRP)",
+    CurrentValue = false,
+    Flag = "Hitbox_Expand",
+    Callback = function(Value)
+        hitboxEnabled = Value
+        updateAllPlayers()
+    end,
+})
+CombatTab:CreateSlider({
+    Name = "Hitbox Size",
+    Range = {5, 50},
+    Increment = 1,
+    CurrentValue = 20,
+    Flag = "Hitbox_Size",
+    Callback = function(Value)
+        hitboxSize = Value
+        if hitboxEnabled then
+            updateAllPlayers()
+        end
+    end,
+})
+
 
 
 ------------------------------------------------------------
@@ -639,52 +735,4 @@ MiscTab:CreateButton({
 
 
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-local mt = getrawmetatable(game)
-setreadonly(mt, false)
-local oldNamecall = mt.__namecall
 
-local function GetClosestPlayer()
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestPlayer = player
-            end
-        end
-    end
-    return nearestPlayer
-end
-
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-    
-    if method == "Raycast" then
-        local origin = args[1]
-        local direction = args[2]
-
-        local result = oldNamecall(self, ...)
-
-        local target = GetClosestPlayer()
-        if target then
-            return {
-                Instance = target.Character.HumanoidRootPart,
-                Position = target.Character.HumanoidRootPart.Position,
-                Material = Enum.Material.Plastic
-            }
-        end
-
-        return result
-    end
-
-    return oldNamecall(self, ...)
-end)
-
-setreadonly(mt, true)
