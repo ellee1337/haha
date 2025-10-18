@@ -1,5 +1,5 @@
 -- 🍽️ Full Auto Restaurant Script + Rayfield UI
--- Made by cookie codes (Fixed Version)
+-- Made by cookie codes (Fixed Version with Teleport Serve)
 
 -- ⚙️ Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
@@ -135,17 +135,39 @@ local function autoPrepare()
 end
 
 ------------------------------------------------------------
--- 🍟 Auto Give Food to Customer (Fixed)
+-- 🍟 Auto Give Food to Customer (Teleport Method)
 ------------------------------------------------------------
-local function autoServeFood()
+local function autoServeFoodTeleport()
     while task.wait(1) and getgenv().Settings.AutoServeFood do
         local tycoon = getTycoon()
         if not tycoon then continue end
 
         for _, item in pairs(tycoon.Items:GetChildren()) do
             if item:IsA("Model") and (item.Name:lower():find("foodcounter") or item.Name:lower():find("tray")) then
-                ActionRemote("DeliverFood", item, tycoon)
-                task.wait(0.2)
+                -- Look for the food model inside counter/tray
+                local food = nil
+                for _, child in pairs(item:GetChildren()) do
+                    if child:IsA("Model") then
+                        food = child
+                        break
+                    end
+                end
+
+                if food and food.PrimaryPart then
+                    -- Find all customers
+                    for _, ui in pairs(player.PlayerGui:GetChildren()) do
+                        if ui.Name == "CustomerSpeechUI" and ui.Adornee then
+                            local customerModel = ui.Adornee:FindFirstAncestorOfClass("Model")
+                            if customerModel and customerModel:FindFirstChild("HumanoidRootPart") then
+                                -- Teleport food above customer
+                                food:SetPrimaryPartCFrame(customerModel.HumanoidRootPart.CFrame + Vector3.new(0,3,0))
+                                task.wait(0.2)
+                                -- Fire server event to confirm delivery
+                                ActionRemote("DeliverFood", item, tycoon)
+                            end
+                        end
+                    end
+                end
             end
         end
     end
@@ -240,7 +262,7 @@ MainTab:CreateToggle({
     Callback = function(Value)
         getgenv().Settings.AutoServeFood = Value
         if Value then
-            task.spawn(autoServeFood)
+            task.spawn(autoServeFoodTeleport)
         end
     end
 })
