@@ -101,7 +101,7 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 ------------------------------------------------------------
--- 🔥 Raycast Hitbox Integration (with toggle)
+-- 🎯 Raycast Hitbox Integration (Toggle)
 ------------------------------------------------------------
 local RaycastHook = {
     Enabled = false,
@@ -109,8 +109,6 @@ local RaycastHook = {
 }
 
 local mt = getrawmetatable(game)
-local setreadonly = setreadonly or make_writeable
-local setreadonly_true = setreadonly or make_readonly
 local oldNamecall = nil
 
 local function GetClosestPlayer()
